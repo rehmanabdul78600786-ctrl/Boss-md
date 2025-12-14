@@ -69,7 +69,7 @@ Boss-md world best devolper
 
 ## 🚀 DEPLOY NOW  
 <p align="center">  
-  <a href="https://dashboard.heroku.com/new?template=https://github.com/rehmanabdul78600786-ctrl/boss-MD-786">  
+  <a href="https://dashboard.heroku.com/new?template=https://github.com/rehmanabdul78600786-ctrl/Boss-md">  
     <img src="https://img.shields.io/badge/Deploy-Heroku-7952B3?style=for-the-badge&logo=heroku&logoColor=white" />  
   </a>  
 </p>  
