@@ -21,7 +21,6 @@ const {
     Browsers
   } = require('@whiskeysockets/baileys')
   
-  
   const l = console.log
   const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
   const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./data')
@@ -66,6 +65,7 @@ const {
   setInterval(clearTempDir, 5 * 60 * 1000);
   
 //===================SESSION-AUTH============================
+
 if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
     if (config.SESSION_ID && config.SESSION_ID.trim() !== "") {
         const sessdata = config.SESSION_ID.replace("BOSS-MD~", '');
