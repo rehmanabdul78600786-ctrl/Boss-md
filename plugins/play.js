@@ -121,6 +121,7 @@ cmd({
         const duration = video.timestamp;
         const thumb = video.thumbnail;
         const ytUrl = video.url;
+        const videoId = video.videoId;
         
         // 🎧 Info box
         await conn.sendMessage(from, {
@@ -140,90 +141,119 @@ cmd({
 `
         }, { quoted: mek });
         
-        // 🎼 Try multiple APIs (fallback system)
-        let audioUrl = null;
-        let apiUsed = "";
+        // 🎼 FIXED PART: Now it will send MP3 file, not link
+        let audioBuffer = null;
+        let fileSizeMB = "0";
         
-        const apis = [
-            {
-                name: "API 1",
-                url: `https://api.dhamzxploit.my.id/api/ytplay?query=${encodeURIComponent(text)}`
+        // Try multiple methods to get MP3
+        const methods = [
+            // Method 1: Direct MP3 URL
+            async () => {
+                try {
+                    const mp3Url = `https://ytmp3.andriyantoday.repl.co/ytmp3?url=https://www.youtube.com/watch?v=${videoId}`;
+                    const response = await axios.get(mp3Url, {
+                        responseType: 'arraybuffer',
+                        timeout: 60000
+                    });
+                    return Buffer.from(response.data);
+                } catch (e) {
+                    console.log("Method 1 failed:", e.message);
+                    return null;
+                }
             },
-            {
-                name: "API 2",
-                url: `https://api.erdwpe.com/api/download/ytplay?query=${encodeURIComponent(text)}`
+            
+            // Method 2: API 1
+            async () => {
+                try {
+                    const apiRes = await axios.get(`https://api.dhamzxploit.my.id/api/ytplay?query=${encodeURIComponent(text)}`, {
+                        timeout: 15000
+                    });
+                    if (apiRes.data?.result?.url) {
+                        const audioRes = await axios.get(apiRes.data.result.url, {
+                            responseType: 'arraybuffer',
+                            timeout: 60000
+                        });
+                        return Buffer.from(audioRes.data);
+                    }
+                } catch (e) {
+                    console.log("Method 2 failed:", e.message);
+                }
+                return null;
             },
-            {
-                name: "Direct",
-                url: `https://yt-api.cyclic.app/audio?id=${video.videoId}`
+            
+            // Method 3: Direct API
+            async () => {
+                try {
+                    const audioRes = await axios.get(`https://yt-api.cyclic.app/audio?id=${videoId}`, {
+                        responseType: 'arraybuffer',
+                        timeout: 60000
+                    });
+                    return Buffer.from(audioRes.data);
+                } catch (e) {
+                    console.log("Method 3 failed:", e.message);
+                    return null;
+                }
+            },
+            
+            // Method 4: YouTube MP3 Converter
+            async () => {
+                try {
+                    const apiRes = await axios.get(`https://api.agriyan.lol/ytaudio?url=https://youtube.com/watch?v=${videoId}`);
+                    if (apiRes.data?.result?.url) {
+                        const audioRes = await axios.get(apiRes.data.result.url, {
+                            responseType: 'arraybuffer',
+                            timeout: 60000
+                        });
+                        return Buffer.from(audioRes.data);
+                    }
+                } catch (e) {
+                    console.log("Method 4 failed:", e.message);
+                }
+                return null;
             }
         ];
         
-        for (let api of apis) {
+        // Try all methods
+        for (let method of methods) {
             try {
-                const res = await axios.get(api.url, { timeout: 10000 });
-                if (api.name === "API 1" && res.data?.result?.url) {
-                    audioUrl = res.data.result.url;
-                    apiUsed = api.name;
+                audioBuffer = await method();
+                if (audioBuffer) {
+                    fileSizeMB = (audioBuffer.length / (1024 * 1024)).toFixed(2);
+                    console.log("✅ MP3 downloaded successfully!");
                     break;
-                } else if (api.name === "API 2" && res.data?.result?.audio) {
-                    audioUrl = res.data.result.audio;
-                    apiUsed = api.name;
-                    break;
-                } else if (api.name === "Direct" && res.data) {
-                    // Direct audio buffer
-                    const tempDir = path.join(__dirname, '../temp');
-                    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-                    
-                    const tempFile = path.join(tempDir, `song_${Date.now()}.mp3`);
-                    fs.writeFileSync(tempFile, Buffer.from(res.data));
-                    
-                    // Send audio
-                    await conn.sendMessage(from, {
-                        audio: fs.readFileSync(tempFile),
-                        mimetype: "audio/mpeg",
-                        fileName: `${title.substring(0, 50)}.mp3`,
-                        caption: `🎵 *${title}*\n⏱️ ${duration}\n🔧 Direct API\n\n🎯 _BOSS-MD_`
-                    }, { quoted: mek });
-                    
-                    // Cleanup
-                    fs.unlinkSync(tempFile);
-                    return;
                 }
-            } catch (apiError) {
-                console.log(`${api.name} failed:`, apiError.message);
+            } catch (error) {
+                console.log("Method failed:", error.message);
                 continue;
             }
         }
         
-        if (!audioUrl) {
-            // Last resort: Send YouTube link
-            return conn.sendMessage(from, {
-                text: `🎵 *${title}*\n\n📥 *Download Links:*\n• https://youtubepp.com/watch?v=${video.videoId}\n• https://ytmp3.nu/${video.videoId}/\n\n🎯 _Use these sites to download_`
+        // If we got MP3 buffer, send it
+        if (audioBuffer) {
+            // Check file size limit
+            if (audioBuffer.length > 16 * 1024 * 1024) {
+                return reply(`❌ *File too large!* (${fileSizeMB}MB)\nWhatsApp limit: 16MB`);
+            }
+            
+            // 📤 Send MP3 file
+            await conn.sendMessage(from, {
+                audio: audioBuffer,
+                mimetype: "audio/mpeg",
+                fileName: `${title.substring(0, 50)}.mp3`,
+                caption: `🎵 *${title}*\n⏱️ ${duration}\n📦 ${fileSizeMB}MB\n\n✅ _BOSS-MD_`
             }, { quoted: mek });
+            
+            return;
         }
         
-        // 📥 Download and send audio
-        await reply("⬇️ *Downloading audio...*");
+        // If all methods failed, use direct URL method (WhatsApp will download)
+        await reply("🔄 *Using direct download method...*");
         
-        const audioRes = await axios.get(audioUrl, { 
-            responseType: 'arraybuffer',
-            timeout: 60000 
-        });
-        
-        const audioBuffer = Buffer.from(audioRes.data);
-        const fileSize = (audioBuffer.length / (1024 * 1024)).toFixed(2);
-        
-        if (audioBuffer.length > 16 * 1024 * 1024) {
-            return reply(`❌ *File too large!* (${fileSize}MB)\nWhatsApp limit: 16MB`);
-        }
-        
-        // 📤 Send audio
         await conn.sendMessage(from, {
-            audio: audioBuffer,
-            mimetype: "audio/mpeg",
-            fileName: `${title.substring(0, 50)}.mp3`,
-            caption: `🎵 *${title}*\n⏱️ ${duration}\n📦 ${fileSize}MB\n🔧 ${apiUsed}\n\n🎯 _BOSS-MD_`
+            audio: { url: `https://www.youtubepp.com/watch?v=${videoId}` },
+            mimetype: 'audio/mpeg',
+            fileName: `${title}.mp3`,
+            caption: `🎵 *${title}*\n⏱️ ${duration}\n\n✅ *Direct download via BOSS-MD*`
         }, { quoted: mek });
         
     } catch (e) {
