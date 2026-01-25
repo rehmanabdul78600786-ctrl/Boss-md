@@ -3,23 +3,23 @@ const { cmd, commands } = require('../command');
 
 // Array of different fancy text styles for QADEER-AI
 const botNameStyles = [
-    "𝗕𝗼𝘀𝘀-𝗺𝗱",
-    "彡★🅱🅾🆂🆂-🅼🅳★彡",
+    "𝓑𝓞𝓢𝓢-𝓜𝓓",
+    "ᴮᴼˢˢmd ᭄",
     "𝓑𝖔𝙨𝙨-ℳ𝒟",
     "boss-𝔐𝔡",
-    "✿♡ 𝓑𝓸𝓼𝓼-𝓶𝓭 ♡✿",
-    "꧁𓊈𒆜 𝑩𝒐𝒔𝒔-𝒎𝒅 𒆜𓊉꧂",
-    "꧁༒♛ 𝔅𝔒𝔖𝔖♛༒꧂",
-    "Boss-hackes",
-    "(≧ᴗ≦) 🅱🅾🆂🆂-🅼🅳 ✦꧂",
-    "𝘽οꜱꜱ"
+    "✿𝓑𝓸𝓼𝓼-𝓶𝓭✿",
+    "꧁𝑩𝒐𝒔𝒔-𝒎𝒅꧂",
+    "𝘽𝙊𝙎𝙎-𝙈𝘿",
+    "ⒷⓄⓈⓈ-ⓂⒹ",
+    "🅑🅞🅢🅢-🅝🅢",
+    "B̶O̶S̶S̶-̶M̶D̶"
 ];
 
 // Track current style index
 let currentStyleIndex = 0;
 
 cmd({
-    pattern: "ping",
+    pattern: "ping2",
     alias: ["speed","pong"],
     use: '.ping',
     desc: "Check bot's response time.",
@@ -78,7 +78,7 @@ async (conn, mek, m, { from, quoted, sender, reply }) => {
 
 // ping2 remains unchanged
 cmd({
-    pattern: "ping2",
+    pattern: "ping",
     desc: "Check bot's response time.",
     category: "main",
     react: "🧠",
