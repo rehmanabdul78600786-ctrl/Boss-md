@@ -1,709 +1,309 @@
-const fs = require('fs');
-const config = require('../config');
-const { cmd, commands } = require('../command');
-const { runtime } = require('../lib/functions');
-const axios = require('axios');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 
-cmd({
-    pattern: "menu",
-    desc: "Show interactive menu system",
-    category: "menu",
-    react: "🧾",
-    filename: __filename
-}, async (conn, mek, m, { from, reply }) => {
-    try {
-        // Count total commands
-        const totalCommands = Object.keys(commands).length;
+const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: { 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+});
+
+// Menu Data - Yaha apne commands add/edit karo
+const menuData = {
+    pages: [
+        {
+            title: "📜 MAIN SECTIONS",
+            rows: [
+                { id: "dl", title: "📥 Download Menu", description: "Facebook, TikTok, YouTube, etc" },
+                { id: "grp", title: "👥 Group Menu", description: "Management & tagging tools" },
+                { id: "fun", title: "😄 Fun Menu", description: "Games, jokes, reactions" },
+                { id: "owner", title: "👑 Owner Menu", description: "Bot owner commands" },
+                { id: "next1", title: "➡️ Next Page", description: "Page 2 of 5" }
+            ]
+        },
+        {
+            title: "🤖 AI & ANIME",
+            rows: [
+                { id: "ai", title: "🤖 AI Menu", description: "ChatGPT, GPT-3, Meta AI" },
+                { id: "anime", title: "🎎 Anime Menu", description: "Anime images & characters" },
+                { id: "convert", title: "🔄 Convert Menu", description: "Sticker, audio, text tools" },
+                { id: "other", title: "📌 Other Menu", description: "Search, weather, news" },
+                { id: "next2", title: "⬅️ Back | Next ➡️", description: "Page 3 of 5" }
+            ]
+        },
+        {
+            title: "💞 REACTIONS & MORE",
+            rows: [
+                { id: "react", title: "💞 Reactions", description: "Love, kiss, hug, slap, etc" },
+                { id: "img", title: "📸 Image Menu", description: "Image generation & editing" },
+                { id: "tools", title: "🛠️ Text Tools", description: "Fancy, TTS, base64" },
+                { id: "search", title: "🔍 Search", description: "Weather, movie, define" },
+                { id: "next3", title: "⬅️ Back | Next ➡️", description: "Page 4 of 5" }
+            ]
+        },
+        {
+            title: "🎮 FUN & GAMES",
+            rows: [
+                { id: "interactive", title: "🎭 Interactive", description: "Rate, insult, hack, ship" },
+                { id: "random", title: "🎲 Random", description: "Flip, roll, facts, colors" },
+                { id: "calc", title: "🔢 Calculate", description: "Math, count, time, date" },
+                { id: "media", title: "🎵 Media", description: "Play, song, video, audio" },
+                { id: "next4", title: "⬅️ Back | Next ➡️", description: "Page 5 of 5" }
+            ]
+        },
+        {
+            title: "⚙️ BOT CONTROLS",
+            rows: [
+                { id: "info", title: "📊 Bot Info", description: "Ping, uptime, runtime, repo" },
+                { id: "admin", title: "⚡ Admin Tools", description: "Promote, demote, mute, lock" },
+                { id: "user", title: "👤 User Tools", description: "Block, unblock, setpp" },
+                { id: "cmd", title: "📋 All Commands", description: "List all 332 commands" },
+                { id: "home", title: "⬅️ Back | Home 🏠", description: "Return to main page" }
+            ]
+        }
+    ],
+    
+    // Command details for each section
+    commands: {
+        dl: `╭━━━〔 📥 DOWNLOAD MENU 〕━━━╮
+│ • *facebook* [url]
+│ • *tiktok* [url]
+│ • *insta* [url]
+│ • *play* [song]
+│ • *video* [url]
+│ • *song* [name]
+│ • *ytmp3* [url]
+│ • *ytmp4* [url]
+╰━━━━━━━━━━━━━━━━━━━╯`,
         
-        const menuCaption = `╭━━━〔 *${config.BOT_NAME}* 〕━━━┈⊷
-╔═══════◇◆◇═══════╗
-『𝗨𝗟𝗧𝗜𝗠𝗔𝗧𝗘 𝗕𝗢𝗧 𝗠𝗘𝗡𝗨』
-╚═══════◇◆◇═══════╝
-⟬★⟭────────────────
-⟬★⟭ 𝗕𝗢𝗧 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡
-⟬★⟭────────────────
-│ 👑  Owner » *BOSS-MD*
-│ 🤖  Baileys » *Multi Device*
-│ 💻  Type » *NodeJs*
-│ 🚀  Platform » *Heroku*
-│ ⚙️  Mode » *[public]*
-│ 🔣  Prefix » *[.]*
-│ 🏷️  creater » *BOSS-MD*
-│ 📚  Commands » *332*
-⟬★⟭─────────────────
-╔═══◇◆◇════════════╗
-『 📜 𝗠𝗘𝗡𝗨 𝗦𝗘𝗖𝗧𝗜𝗢𝗡𝗦 』
-╚═══◇◆◇════════════╝
-│ 1️⃣  📥 *Download Menu*
-│ 2️⃣  👥 *Group Menu*
-│ 3️⃣  😄 *Fun Menu*
-│ 4️⃣  👑 *Owner Menu*
-│ 5️⃣  🤖 *AI Menu*
-│ 6️⃣  🎎 *Anime Menu*
-│ 7️⃣  🔄 *Convert Menu*
-│ 8️⃣  📌 *Other Menu*
-│ 9️⃣  💞 *Reactions Menu*
-│ 🔟  🏠 *Main Menu*
-───────────────────
-╔════◇◆◇══════════╗
-『📥 *𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗 𝗠𝗘𝗡𝗨* 』
-╚════◇◆◇══════════╝
-[ *SYSTEM* *CORE* *STAB* *Initializing*..]
-├── 🌐 𝗦𝗼𝗰𝗶𝗮𝗹 𝗠𝗲𝗱𝗶𝗮
-│   ├─ *facebook* [url]
-│   ├─ *download* [url]
-│   ├─ *mediafire* [url]
-│   ├─ *tiktok* [url]
-│   ├─ *twitter* [url]
-│   ├─ *insta* [url]
-│   ├─ *apk* [app]
-│   ├─ *img* [query]
-│   ├─ *tt2* [url]
-│   ├─ *pins* [url]
-│   ├─ *apk2* [app]
-│   ├─ *fb2* [url]
-│   └─ *pinterest* [url]
-├── 🎵 *𝗠𝘂𝘀𝗶𝗰/𝗩𝗶𝗱𝗲𝗼*
-│   ├─ *spotify* [query]
-│   ├─ *play* [song]
-│   ├─ *play2-10* [song]
-│   ├─ *audio* [url]
-│   ├─ *video* [url]
-│   ├─ *video2-10* [url]
-│   ├─ *ytmp3* [url]
-│   ├─ *ytmp4* [url]
-│   ├─ *song* [name]
-│   └─ *darama* [name]
-[+] *Payload Ready* ✔
-──────────────────
-╔════◇◆◇══════════╗
- 『 👥 *𝗚𝗥𝗢𝗨𝗣 𝗠𝗘𝗡𝗨* 』
-╚════◇◆◇══════════╝
-╭━[🌡️*𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧* ]━━╮
-│ • *grouplink*
-│ • *kickall*
-│ • *kickall2*
-│ • *kickall3*
-│ • *add @user*
-│ • *remove @user*
-│ • *kick @user*
-╰━━━━━━━━━━━━━━━━━╯
-╭─━⚡*𝗔𝗗𝗠𝗜𝗡 𝗧𝗢𝗢𝗟𝗦* ─━╮
+        grp: `╭━━━〔 👥 GROUP MENU 〕━━━╮
+│ • *add* @user
+│ • *kick* @user
 │ • *promote* @user
 │ • *demote* @user
-│ • *dismiss*
-│ • *revoke*
-│ • *mute* [time]
-│ • *unmute*
-│ • *lockgc*
-│ • *unlockgc*
-╰─────────────────╯
-╔══〔 🏷️ *𝗧𝗔𝗚𝗚𝗜𝗡𝗚* 〕══╗
-│ • *tag* @user
-│ • *hidetag* [msg]
 │ • *tagall*
-│ • *tagadmins*
-│ • *invite*
-╚═════════════════╝
-╔══════◇◆◇═════════╗
-  『  *𝗙𝗨𝗡 𝗠𝗘𝗡𝗨* 』
-╚══════◇◆◇═════════╝
-╔🎭*𝗜𝗡𝗧𝗘𝗥𝗔𝗖𝗧𝗜𝗩𝗘 𝗠𝗘𝗡𝗨* ╗
+│ • *hidetag* [msg]
+│ • *mute* [time]
+│ • *lockgc*
+╰━━━━━━━━━━━━━━━━━━━╯`,
+        
+        fun: `╭━━━〔 😄 FUN MENU 〕━━━╮
 │ • *shapar*
 │ • *rate* @user
 │ • *insult* @user
-│ • *hack* @user
-│ • *ship* @user1 @user2
+│ • *joke*
 │ • *character*
 │ • *pickup*
-│ • *joke*
-╚═════════════════╝
-───────────────────
-╔═👿 *𝗥𝗘𝗔𝗖𝗧𝗜𝗢𝗡𝗘 𝗠𝗘𝗡𝗨*═╗
-│ • *love*
-│ • *happy*
-│ • *sad*
-│ • *hot*
-│ • *heart*
-│ • *shy*
-│ • *beautiful*
-│ • *cunfuzed*
-│ • *mon*
-│ • *kiss*
-│ • *broke*
-│ • *hurt*
-╚═════════════════╝
-───────────────────
-╔════◇◆◇══════════╗
- 『  *𝗢𝗪𝗡𝗘𝗥 𝗠𝗘𝗡𝗨* 
-╚════◇◆◇══════════╝
-╔══ 💗 *𝗨𝘀𝗘𝗥 𝗠𝗘𝗡𝗨* ══╗
-│ • *Restricted Commands*
-│ • *block*
-│ • *unblock*
-│ • *fullpp*
-│ • *setpp*
-│ • *restart*
-│ • *shutdown*
-│ • *updatecmd*
-╚═════════════════╝
-╔══ ⚠️ *𝗜𝗡𝗙𝗢 𝗧𝗢𝗢𝗟𝗦* ══╗
-│ • *gjid*
-│ • *jid*
-│ • *listcmd*
-│ • *allmenu*
-╚═════════════════╝
-╔═══🔑 *𝗔𝗜 𝗠𝗘𝗡𝗨* ════╗
-│ •  💬 *Chat AI*
-│ • *ai*
-│ • *gpt3*
-│ • *gpt2*
-│ • *gpt*
-│ • *gptmini*
-│ • *meta*
-╚═════════════━═══╝
-╔══◇ *𝗜𝗠𝗚 𝗠𝗘𝗡𝗨* ◇══╗
-‎│ ╭──────────────
-‎│ │ . *image*
-‎│ │ • *imagine l[text]*
-‎│ │ • *imagine2 [text]*
-‎│ ╰──────────────
-‎│ ╭──────────────
-‎│ │ 🔍 *Specialized*
-‎│ │ • *blackbox* [query]
-‎│ │ • *luma* [query]
-‎│ │ • *dj* [query]
-‎│ │ • *irfan* [query]
-‎│ ╰──────────────
-‎╚═════════════════╝
-╔═════◇◆◇═════════╗
-  『  *𝗔𝗡𝗜𝗠𝗘 𝗠𝗘𝗡𝗨* 』
-╚═════◇◆◇═════════╝
-╔═ 🎭 *𝗔𝗡𝗜𝗠𝗘 𝗠𝗘𝗡𝗨* ══╗
-│ •  *Images*
-│ • *fack*
-│ • *dog*
-│ • *awoo*
-│ • *garl*
-│ • *waifu*
-‎│ • *neko*
-│ • *megnumin*
-│ • *maid*
-│ • *loli*
-╚════════════════╝
-╔ *𝗖H𝗔𝗥𝗔𝗖𝗧𝗘𝗥S 𝗠𝗘𝗡𝗨* ╗
-│ • *animegirl*
-│ • *animegirl1-5*
-│ • *anime1-5*
-‎│ • *foxgirl*
-│ • *naruto*
-╚════════════════╝
-╔═ *𝗖𝗢𝗡𝗩𝗘𝗥𝗧 𝗠𝗘𝗡𝗨* ═══╗
-│ • *Media Conversion*
-│ • *sticker* [img]
-│ • *sticker2* [img]
-│ • *emojimix* 😎+😂
-│ • *take* [name,text]
-│ • *tomp3* [video]
-╔═🎭 *Text Tools* ═╗
-│ • *fancy* [text]
-│ • *tts* [text] 
-│ • *trt* [text]
-│ • *base64* [text]
-│ • *unbase64* [text]
-╚═════════════════╝
-╔════◇◆◇══════════╗
-『  *𝗢𝗧H𝗘𝗥 𝗠𝗘𝗡𝗨* 』
-╚════◇◆◇══════════╝
-╔═ 🎭 *𝗢𝗧H𝗘𝗥 𝗠𝗘𝗡𝗨* ══╗
-│ • *timenow*  
-│ • *date* 
-│ • *count* [num]  
-│ • *calculate* [expr]  
-│ • *countx*
-╚═════════════════╝
-╔═══ 🎭 *𝗥𝗘𝗡D𝗢𝗠* ════╗
-│ • *flip*
-│ • *coinflip*  
-│ • *rcolor*  
-│ • *roll*  
-│ • *fact*
-╚═════════════════╝
-╔══🎭 *SEARCH* 🔎 ═══╗
-│ • *define* [word]  
-│ • *news* [query]  
-│ • *movie* [name]  
-│ • *weather* [loc]   
-╚═════════════════╝
-╔═════◇◆◇═════════╗
- 『 *𝗥𝗘𝗔𝗖𝗧I𝗢𝗡 𝗠𝗘𝗡𝗨* 』
-╚═════◇◆◇═════════╝
-╔══ 🎭 *𝗔𝗙𝗙𝗘𝗖𝗧I𝗢𝗡*  ══╗
-│ • *cuddle* @user  
-│ • *hug* @user  
-│ • *kiss* @user  
-│ • *lick* @user  
-│ • *pat* @user  
-╚═════════════════╝
-╔════ 🎭 *𝗙U𝗡𝗡Y* ════╗
-│ • *bully* @user  
-│ • *bonk* @user  
-│ • *yeet* @user  
-│ • *slap* @user  
-│ • *kill* @user  
-╚═════════════════╝
-╔═ 🎭 *EXPRESSIONS* ═╗
-│ • *blush* @user  
-│ • *smile* @user  
-│ • *happy* @user  
-│ • *wink* @user  
-│ • *poke* @user  
-╚═════════════════╝
-╔════◇◆◇══════════╗
-『  *𝗠𝗔I𝗡 𝗠𝗘𝗡𝗨* 』
-╚════◇◆◇══════════╝
-╔═══🎭 *𝗕𝗢𝗧 𝗜𝗡𝗙𝗢*  ═══╗
-│ • *ping*
-‎│ • *live*
-‎│ • *alive*
-‎│ • *runtime*
-│ • *uptime*
-‎│ • *repo*
-‎│ • *owner*
-╚═════════════════╝
-╔═══════◇◆◇═══════╗
-『✨*𝗕𝗢𝗧 𝗖𝗢𝗡𝗧𝗥𝗢𝗟𝗦*✨ 』
-╚═══════◇◆◇═══════╝
-⟦★⟧────────────────
-│ • *menu*
-│ • *menu2*
-│ • *restart*
-⟦★⟧────────────────
-> ${config.DESCRIPTION}`;
-
-        const contextInfo = {
-            mentionedJid: [m.sender],
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363405061777123@newsletter',
-                newsletterName: config.OWNER_NAME,
-                serverMessageId: 143
-            }
-        };
-
-        // Function to send menu image with timeout
-        const sendMenuImage = async () => {
-            try {
-                return await conn.sendMessage(
-                    from,
-                    {
-                        image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/n42rcs.jpg' },
-                        caption: menuCaption,
-                        contextInfo: contextInfo
-                    },
-                    { quoted: mek }
-                );
-            } catch (e) {
-                console.log('Image send failed, falling back to text');
-                return await conn.sendMessage(
-                    from,
-                    { text: menuCaption, contextInfo: contextInfo },
-                    { quoted: mek }
-                );
-            }
-        };
-
-        // Send image with timeout
-        let sentMsg;
-        try {
-            sentMsg = await Promise.race([
-                sendMenuImage(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Image send timeout')), 10000))
-            ]);
-        } catch (e) {
-            console.log('Menu send error:', e);
-            sentMsg = await conn.sendMessage(
-                from,
-                { text: menuCaption, contextInfo: contextInfo },
-                { quoted: mek }
-            );
-        }
+│ • *hack* @user
+│ • *ship* @user1 @user2
+╰━━━━━━━━━━━━━━━━━━━╯`,
         
-        const messageID = sentMsg.key.id;
+        ai: `╭━━━〔 🤖 AI MENU 〕━━━╮
+│ • *ai* [query]
+│ • *gpt* [query]
+│ • *gpt3* [query]
+│ • *chat* [query]
+│ • *blackbox* [query]
+│ • *luma* [query]
+│ • *image* [text]
+│ • *imagine* [text]
+╰━━━━━━━━━━━━━━━━━━━╯`,
+        
+        react: `╭━━━〔 💞 REACTIONS 〕━━━╮
+│ • *love* @user
+│ • *kiss* @user
+│ • *hug* @user
+│ • *slap* @user
+│ • *pat* @user
+│ • *cuddle* @user
+│ • *bully* @user
+│ • *kill* @user
+╰━━━━━━━━━━━━━━━━━━━╯`
+    }
+};
 
-        // Menu data (complete version)
-        const menuData = {
-            '1': {
-                title: "📥 *Download Menu* 📥",
-                content: `╭━━━〔 *Download Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🌐 *Social Media*
-┃★│ • facebook [url]
-┃★│ • mediafire [url]
-┃★│ • tiktok [url]
-┃★│ • twitter [url]
-┃★│ • Insta [url]
-┃★│ • apk [app]
-┃★│ • img [query]
-┃★│ • tt2 [url]
-┃★│ • pins [url]
-┃★│ • apk2 [app]
-┃★│ • fb2 [url]
-┃★│ • pinterest [url]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🎵 *Music/Video*
-┃★│ • spotify [query]
-┃★│ • play [song]
-┃★│ • play2-10 [song]
-┃★│ • audio [url]
-┃★│ • video [url]
-┃★│ • video2-10 [url]
-┃★│ • ytmp3 [url]
-┃★│ • ytmp4 [url]
-┃★│ • song [name]
-┃★│ • darama [name]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '2': {
-                title: "👥 *Group Menu* 👥",
-                content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🛠️ *Management*
-┃★│ • grouplink
-┃★│ • kickall
-┃★│ • kickall2
-┃★│ • kickall3
-┃★│ • add @user
-┃★│ • remove @user
-┃★│ • kick @user
-┃★╰──────────────
-┃★╭──────────────
-┃★│ ⚡ *Admin Tools*
-┃★│ • promote @user
-┃★│ • demote @user
-┃★│ • dismiss 
-┃★│ • revoke
-┃★│ • mute [time]
-┃★│ • unmute
-┃★│ • lockgc
-┃★│ • unlockgc
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🏷️ *Tagging*
-┃★│ • tag @user
-┃★│ • hidetag [msg]
-┃★│ • tagall
-┃★│ • tagadmins
-┃★│ • invite
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '3': {
-                title: "😄 *Fun Menu* 😄",
-                content: `╭━━━〔 *Fun Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🎭 *Interactive*
-┃★│ • shapar
-┃★│ • rate @user
-┃★│ • insult @user
-┃★│ • hack @user
-┃★│ • ship @user1 @user2
-┃★│ • character
-┃★│ • pickup
-┃★│ • joke
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😂 *Reactions*
-┃★│ • hrt
-┃★│ • hpy
-┃★│ • syd
-┃★│ • anger
-┃★│ • shy
-┃★│ • kiss
-┃★│ • mon
-┃★│ • cunfuzed
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '4': {
-                title: "👑 *Owner Menu* 👑",
-                content: `╭━━━〔 *Owner Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ⚠️ *Restricted*
-┃★│ • block @user
-┃★│ • unblock @user
-┃★│ • fullpp [img]
-┃★│ • setpp [img]
-┃★│ • restart
-┃★│ • shutdown
-┃★│ • updatecmd
-┃★╰──────────────
-┃★╭──────────────
-┃★│ ℹ️ *Info Tools*
-┃★│ • gjid
-┃★│ • jid @user
-┃★│ • listcmd
-┃★│ • allmenu
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '5': {
-                title: "🤖 *AI Menu* 🤖",
-                content: `╭━━━〔 *AI Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 💬 *Chat AI*
-┃★│ • ai [query]
-┃★│ • gpt3 [query]
-┃★│ • gpt2 [query]
-┃★│ • gptmini [query]
-┃★│ • gpt [query]
-┃★│ • meta [query]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🖼️ *Image AI*
-┃★│ • imagine [text]
-┃★│ • imagine2 [text]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🔍 *Specialized*
-┃★│ • blackbox [query]
-┃★│ • luma [query]
-┃★│ • dj [query]
-┃★│ • khan [query]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '6': {
-                title: "🎎 *Anime Menu* 🎎",
-                content: `╭━━━〔 *Anime Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🖼️ *Images*
-┃★│ • fack
-┃★│ • dog
-┃★│ • awoo
-┃★│ • garl
-┃★│ • waifu
-┃★│ • neko
-┃★│ • megnumin
-┃★│ • maid
-┃★│ • loli
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🎭 *Characters*
-┃★│ • animegirl
-┃★│ • animegirl1-5
-┃★│ • anime1-5
-┃★│ • foxgirl
-┃★│ • naruto
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '7': {
-                title: "🔄 *Convert Menu* 🔄",
-                content: `╭━━━〔 *Convert Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🖼️ *Media*
-┃★│ • sticker [img]
-┃★│ • sticker2 [img]
-┃★│ • emojimix 😎+😂
-┃★│ • take [name,text]
-┃★│ • tomp3 [video]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 📝 *Text*
-┃★│ • fancy [text]
-┃★│ • tts [text]
-┃★│ • trt [text]
-┃★│ • base64 [text]
-┃★│ • unbase64 [text]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '8': {
-                title: "📌 *Other Menu* 📌",
-                content: `╭━━━〔 *Other Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🕒 *Utilities*
-┃★│ • timenow
-┃★│ • date
-┃★│ • count [num]
-┃★│ • calculate [expr]
-┃★│ • countx
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🎲 *Random*
-┃★│ • flip
-┃★│ • coinflip
-┃★│ • rcolor
-┃★│ • roll
-┃★│ • fact
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🔍 *Search*
-┃★│ • define [word]
-┃★│ • news [query]
-┃★│ • movie [name]
-┃★│ • weather [loc]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '9': {
-                title: "💞 *Reactions Menu* 💞",
-                content: `╭━━━〔 *Reactions Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ❤️ *Affection*
-┃★│ • cuddle @user
-┃★│ • hug @user
-┃★│ • kiss @user
-┃★│ • lick @user
-┃★│ • pat @user
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😂 *Funny*
-┃★│ • bully @user
-┃★│ • bonk @user
-┃★│ • yeet @user
-┃★│ • slap @user
-┃★│ • kill @user
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😊 *Expressions*
-┃★│ • blush @user
-┃★│ • smile @user
-┃★│ • happy @user
-┃★│ • wink @user
-┃★│ • poke @user
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
-            },
-            '10': {
-                title: "🏠 *Main Menu* 🏠",
-                content: `╭━━━〔 *Main Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ℹ️ *Bot Info*
-┃★│ • ping
-┃★│ • live
-┃★│ • alive
-┃★│ • runtime
-┃★│ • uptime
-┃★│ • repo
-┃★│ • owner
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🛠️ *Controls*
-┃★│ • menu
-┃★│ • menu2
-┃★│ • restart
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-                image: true
+// User session storage
+let userSessions = {};
+
+// Send menu page
+async function sendMenuPage(message, pageNum = 0) {
+    const user = message.from;
+    userSessions[user] = { page: pageNum };
+    
+    const page = menuData.pages[pageNum];
+    
+    await client.sendMessage(user, {
+        text: `╭━━━〔 *BOSS-MD AI BOT* 〕━━━┈⊷
+│ 📄 Page: ${pageNum + 1}/${menuData.pages.length}
+│ 📚 Commands: 332
+│ 👑 Owner: BOSS-MD
+╰━━━━━━━━━━━━━━━━━━━━━━━━━`,
+        footer: "Select option or type .next/.back",
+        title: page.title,
+        buttonText: "📋 Select",
+        sections: [page]
+    });
+}
+
+// Send command details
+async function sendCommandDetails(message, cmdId) {
+    const cmd = menuData.commands[cmdId];
+    if (cmd) {
+        await client.sendMessage(message.from, cmd);
+        // Auto return to menu after 5 seconds
+        setTimeout(async () => {
+            const session = userSessions[message.from];
+            if (session) {
+                await sendMenuPage(message, session.page);
             }
-        };
+        }, 5000);
+    } else {
+        await client.sendMessage(message.from, `❌ Command "${cmdId}" not found. Use *.menu* to see all options.`);
+    }
+}
 
-        // Message handler with improved error handling
-        const handler = async (msgData) => {
-            try {
-                const receivedMsg = msgData.messages[0];
-                if (!receivedMsg?.message || !receivedMsg.key?.remoteJid) return;
-
-                const isReplyToMenu = receivedMsg.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+// Handle messages
+client.on('message', async (message) => {
+    if (message.body.startsWith('.')) {
+        const cmd = message.body.toLowerCase().trim();
+        
+        switch(cmd) {
+            case '.menu':
+                await sendMenuPage(message, 0);
+                break;
                 
-                if (isReplyToMenu) {
-                    const receivedText = receivedMsg.message.conversation || 
-                                      receivedMsg.message.extendedTextMessage?.text;
-                    const senderID = receivedMsg.key.remoteJid;
-
-                    if (menuData[receivedText]) {
-                        const selectedMenu = menuData[receivedText];
-                        
-                        try {
-                            if (selectedMenu.image) {
-                                await conn.sendMessage(
-                                    senderID,
-                                    {
-                                        image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/xla7at.jpg' },
-                                        caption: selectedMenu.content,
-                                        contextInfo: contextInfo
-                                    },
-                                    { quoted: receivedMsg }
-                                );
-                            } else {
-                                await conn.sendMessage(
-                                    senderID,
-                                    { text: selectedMenu.content, contextInfo: contextInfo },
-                                    { quoted: receivedMsg }
-                                );
-                            }
-
-                            await conn.sendMessage(senderID, {
-                                react: { text: '✅', key: receivedMsg.key }
-                            });
-
-                        } catch (e) {
-                            console.log('Menu reply error:', e);
-                            await conn.sendMessage(
-                                senderID,
-                                { text: selectedMenu.content, contextInfo: contextInfo },
-                                { quoted: receivedMsg }
-                            );
-                        }
-
-                    } else {
-                        await conn.sendMessage(
-                            senderID,
-                            {
-                                text: `❌ *Invalid Option!* ❌\n\nPlease reply with a number between 1-10 to select a menu.\n\n*Example:* Reply with "1" for Download Menu\n\n> ${config.DESCRIPTION}`,
-                                contextInfo: contextInfo
-                            },
-                            { quoted: receivedMsg }
-                        );
-                    }
+            case '.next':
+                const nextSession = userSessions[message.from];
+                if (nextSession) {
+                    const nextPage = (nextSession.page + 1) % menuData.pages.length;
+                    await sendMenuPage(message, nextPage);
+                } else {
+                    await sendMenuPage(message, 0);
                 }
-            } catch (e) {
-                console.log('Handler error:', e);
-            }
-        };
-
-        // Add listener
-        conn.ev.on("messages.upsert", handler);
-
-        // Remove listener after 5 minutes
-        setTimeout(() => {
-            conn.ev.off("messages.upsert", handler);
-        }, 300000);
-
-    } catch (e) {
-        console.error('Menu Error:', e);
-        try {
-            await conn.sendMessage(
-                from,
-                { text: `❌ Menu system is currently busy. Please try again later.\n\n> ${config.DESCRIPTION}` },
-                { quoted: mek }
-            );
-        } catch (finalError) {
-            console.log('Final error handling failed:', finalError);
+                break;
+                
+            case '.back':
+                const backSession = userSessions[message.from];
+                if (backSession) {
+                    const prevPage = (backSession.page - 1 + menuData.pages.length) % menuData.pages.length;
+                    await sendMenuPage(message, prevPage);
+                } else {
+                    await sendMenuPage(message, 0);
+                }
+                break;
+                
+            case '.help':
+                await client.sendMessage(message.from, 
+                    `╭━━━〔 🆘 HELP 〕━━━╮
+│ *Commands:*
+│ • .menu - Show menu
+│ • .next - Next page
+│ • .back - Previous page
+│ • .help - This help
+│ • .ping - Check bot
+│ • .owner - Contact owner
+╰━━━━━━━━━━━━━━━━━━━╯`);
+                break;
+                
+            case '.ping':
+                const start = Date.now();
+                await client.sendMessage(message.from, '🏓 Pinging...');
+                const latency = Date.now() - start;
+                await client.sendMessage(message.from, `🏓 Pong! Latency: ${latency}ms`);
+                break;
+                
+            default:
+                // Check if it's a menu command
+                const cmdKey = cmd.substring(1);
+                if (menuData.commands[cmdKey]) {
+                    await sendCommandDetails(message, cmdKey);
+                } else {
+                    await client.sendMessage(message.from, 
+                        `❌ Unknown command. Use *.menu* to see all available commands.\n📌 Example: .facebook [url]`);
+                }
         }
     }
 });
+
+// Handle button clicks (list responses)
+client.on('message', async (message) => {
+    if (message.type === 'list_response') {
+        const selectedId = message.listResponse.title;
+        const session = userSessions[message.from];
+        
+        // Navigation handling
+        if (selectedId.includes('next') || selectedId.includes('Next')) {
+            if (session) {
+                const nextPage = (session.page + 1) % menuData.pages.length;
+                await sendMenuPage(message, nextPage);
+            }
+            return;
+        }
+        
+        if (selectedId.includes('back') || selectedId.includes('Back')) {
+            if (session) {
+                const prevPage = (session.page - 1 + menuData.pages.length) % menuData.pages.length;
+                await sendMenuPage(message, prevPage);
+            }
+            return;
+        }
+        
+        if (selectedId.includes('home') || selectedId.includes('Home')) {
+            await sendMenuPage(message, 0);
+            return;
+        }
+        
+        // Command handling
+        const cmdMap = {
+            '📥 Download Menu': 'dl',
+            '👥 Group Menu': 'grp',
+            '😄 Fun Menu': 'fun',
+            '👑 Owner Menu': 'owner',
+            '🤖 AI Menu': 'ai',
+            '🎎 Anime Menu': 'anime',
+            '🔄 Convert Menu': 'convert',
+            '📌 Other Menu': 'other',
+            '💞 Reactions': 'react',
+            '📸 Image Menu': 'img',
+            '🛠️ Text Tools': 'tools',
+            '🔍 Search': 'search',
+            '🎭 Interactive': 'interactive',
+            '🎲 Random': 'random',
+            '🔢 Calculate': 'calc',
+            '🎵 Media': 'media',
+            '📊 Bot Info': 'info',
+            '⚡ Admin Tools': 'admin',
+            '👤 User Tools': 'user',
+            '📋 All Commands': 'cmd'
+        };
+        
+        if (cmdMap[selectedId]) {
+            await sendCommandDetails(message, cmdMap[selectedId]);
+        }
+    }
+});
+
+// Bot startup
+client.on('qr', (qr) => {
+    qrcode.generate(qr, { small: true });
+    console.log('📱 Scan QR code with WhatsApp');
+});
+
+client.on('ready', () => {
+    console.log('✅ BOSS-MD Bot is ready!');
+    console.log('📋 Commands available:');
+    console.log('• .menu - Show scrollable menu');
+    console.log('• .help - Show help');
+    console.log('• .ping - Check bot status');
+});
+
+client.on('disconnected', (reason) => {
+    console.log('❌ Bot disconnected:', reason);
+});
+
+// Initialize bot
+client.initialize();
+
+// Export for use in other files
+module.exports = { client, sendMenuPage };
