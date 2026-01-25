@@ -6,7 +6,17 @@
   "scripts": {
     "start": "pm2 start index.js --deep-monitoring --attach --name Boss-MD",
     "stop": "pm2 stop Boss-MD",
-    "restart": "pm2 restart Boss-MD"
+    "restart": "pm2 restart Boss-MD",
+    "heroku-start": "node server.js",
+    "dev": "node index.js",
+    "test": "node test.js",
+    "fix": "node fix.js",
+    "ping": "node ping.js",
+    "keep-alive": "node keep-alive.js"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "latest",
@@ -14,7 +24,7 @@
     "@dark-yasiya/yt-dl.js": "1.0.5",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@vitalets/google-translate-api": "^9.2.0",
-    "@dark-yasiya/scrap":"1.0.1",    
+    "@dark-yasiya/scrap": "1.0.1",
     "pino": "^7.0.5",
     "pm2": "^6.0.5",
     "util": "^0.12.4",
@@ -39,19 +49,36 @@
     "pdfkit": "^0.14.0",
     "wa_set_pkg": "1.0.5",
     "wa-sticker-formatter": "^4.4.4",
-    "path": "^0.12.7",
     "vm": "^0.1.0",
     "adm-zip": "^0.5.16",
     "cheerio": "^1.0.0-rc.12",
-    "ruhend-scraper" : "8.0.3",
+    "ruhend-scraper": "8.0.3",
     "qrcode-terminal": "^0.12.0",
-    "yt-search":"2.11.1",
+    "yt-search": "2.11.1",
     "sequelize": "^6.37.5",
     "sqlite3": "^5.1.7",
-    "vm": "^0.1.0",
-    "api-dylux":"latest",
-    "@mrnima/tiktok-downloader":"1.0.0",
-    "@mrnima/facebook-downloader":"1.0.0",
-    "mrnima-moviedl":"1.0.0"
-  }
+    "api-dylux": "latest",
+    "@mrnima/tiktok-downloader": "1.0.0",
+    "@mrnima/facebook-downloader": "1.0.0",
+    "mrnima-moviedl": "1.0.0",
+    "qrcode": "^1.5.3",
+    "chalk": "^4.1.2",
+    "pino-pretty": "^9.4.0"
+  },
+  "keywords": [
+    "whatsapp-bot",
+    "boss-md",
+    "heroku",
+    "whatsapp"
+  ],
+  "author": "BOSS-MD Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/Boss-MD.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/Boss-MD/issues"
+  },
+  "homepage": "https://github.com/your-username/Boss-MD#readme"
 }
