@@ -33,19 +33,21 @@ cmd({
                 form.append('files[]', fs.createReadStream(tempFile));
                 
                 const uploadRes = await axios.post('https://uguu.se/upload.php', form, {
-                    headers: form.getHeaders()
+                    headers: form.getHeaders(),
+                    timeout: 30000
                 });
                 
                 const audioUrl = uploadRes.data.files[0].url;
                 
-                // Call audd.io API
+                // Call audd.io API - APNA TOKEN LAGAO YAHAN
                 const auddForm = new FormData();
                 auddForm.append('url', audioUrl);
                 auddForm.append('return', 'apple_music,spotify,deezer');
-                auddForm.append('api_token', 'your_api_token_here'); // Replace with your token
+                auddForm.append('api_token', '90d41db3d2903c595182b352cfb5e450'); // ✅ YOUR TOKEN ADDED
                 
                 const auddRes = await axios.post('https://api.audd.io/', auddForm, {
-                    headers: auddForm.getHeaders()
+                    headers: auddForm.getHeaders(),
+                    timeout: 30000
                 });
                 
                 // Clean temp file
@@ -110,7 +112,7 @@ cmd({
         }
         
         // ================== MODE 2: NORMAL SONG DOWNLOAD ==================
-        if (!text) return reply("❌ *Song name likho*\nExample: *.song pal pal*\nOr reply to audio for recognition");
+        if (!text) return reply("❌ *Song name likho chapri*\nExample: *.song pal lol*\nOr reply to audio for recognition");
         
         // 🔍 Search
         const search = await yts(text);
@@ -147,11 +149,10 @@ cmd({
         
         // Try multiple methods to get MP3
         const methods = [
-            // Method 1: Direct MP3 URL
+            // Method 1: Fixed API (NEW)
             async () => {
                 try {
-                    const mp3Url = `https://ytmp3.andriyantoday.repl.co/ytmp3?url=https://www.youtube.com/watch?v=${videoId}`;
-                    const response = await axios.get(mp3Url, {
+                    const response = await axios.get(`https://api.mhankbarbar.tech/ytaudio?url=https://www.youtube.com/watch?v=${videoId}`, {
                         responseType: 'arraybuffer',
                         timeout: 60000
                     });
@@ -162,7 +163,7 @@ cmd({
                 }
             },
             
-            // Method 2: API 1
+            // Method 2: Working API
             async () => {
                 try {
                     const apiRes = await axios.get(`https://api.dhamzxploit.my.id/api/ytplay?query=${encodeURIComponent(text)}`, {
@@ -181,24 +182,30 @@ cmd({
                 return null;
             },
             
-            // Method 3: Direct API
+            // Method 3: Alternative API
             async () => {
                 try {
-                    const audioRes = await axios.get(`https://yt-api.cyclic.app/audio?id=${videoId}`, {
+                    const response = await axios.get(`https://api.akuari.my.id/downloader/youtube3?link=https://youtube.com/watch?v=${videoId}`, {
                         responseType: 'arraybuffer',
                         timeout: 60000
                     });
-                    return Buffer.from(audioRes.data);
+                    if (response.data && response.data.result && response.data.result.audio) {
+                        const audioRes = await axios.get(response.data.result.audio, {
+                            responseType: 'arraybuffer',
+                            timeout: 60000
+                        });
+                        return Buffer.from(audioRes.data);
+                    }
                 } catch (e) {
                     console.log("Method 3 failed:", e.message);
                     return null;
                 }
             },
             
-            // Method 4: YouTube MP3 Converter
+            // Method 4: Direct YouTube to MP3
             async () => {
                 try {
-                    const apiRes = await axios.get(`https://api.agriyan.lol/ytaudio?url=https://youtube.com/watch?v=${videoId}`);
+                    const apiRes = await axios.get(`https://ytapi.botcahx.eu.org/api/download/audio?url=https://youtube.com/watch?v=${videoId}&apikey=botcahx`);
                     if (apiRes.data?.result?.url) {
                         const audioRes = await axios.get(apiRes.data.result.url, {
                             responseType: 'arraybuffer',
