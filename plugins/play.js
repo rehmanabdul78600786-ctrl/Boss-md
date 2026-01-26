@@ -1,47 +1,60 @@
-const { cmd } = require('../command');
-const yts = require('yt-search');
-const ytdl = require('ytdl-core');
+const axios = require("axios");
+const config = require("../config");
+const { cmd } = require("../command");
 
 cmd({
   pattern: "play",
-  alias: ["song"],
-  desc: "Play song with thumbnail",
+  alias: ["mp3", "song", "ytmp3"],
+  react: "🎧",
+  desc: "Download YouTube MP3",
   category: "download",
-  react: "🎵",
+  use: ".play3 <YT URL>",
   filename: __filename
-}, async (conn, mek, m, { from, reply, q }) => {
+}, async (conn, m, msg, { from, q, reply }) => {
   try {
-    if (!q) return reply("❌ Song name likho chaprio\nExample: *.play pal pal lol*");
+    if (!q) return reply("❌ YouTube link do bhai chaprio waly kam nai kro!");
 
-    const search = await yts(q);
-    if (!search.videos.length) return reply("❌ Song nahi mila");
+    // API URL
+    const apiUrl = `https://arslan-apis.vercel.app/download/ytmp3?url=${encodeURIComponent(q)}`;
 
-    const video = search.videos[0];
+    // Fetch Data
+    const { data } = await axios.get(apiUrl);
 
-    const audioStream = ytdl(video.url, {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25
-    });
+    if (!data.status || !data.result?.download?.url) {
+      return reply("❌ MP3 generate nahi ho saki!");
+    }
 
+    const meta = data.result.metadata;
+    const audioUrl = data.result.download.url;
+
+    // Caption
+    const caption = `
+*ANAYAT-AI WHATSAPP BOT*
+
+🎵 *Title:* ${meta.title}
+🎧 *Quality:* 128kbps
+📁 *Type:* MP3
+
+${config.FOOTER || "> © *Powered By Boss-MD*"}
+`;
+
+    // Thumbnail + info
     await conn.sendMessage(from, {
-      audio: { stream: audioStream },
+      image: { url: meta.thumbnail },
+      caption
+    }, { quoted: m });
+
+    // Sending Audio
+    await conn.sendMessage(from, {
+      audio: { url: audioUrl },
       mimetype: "audio/mpeg",
-      fileName: `${video.title}.mp3`,
-      contextInfo: {
-        externalAdReply: {
-          title: video.title,
-          body: "BOSS-MD Music Player 🎶",
-          thumbnailUrl: video.thumbnail,
-          mediaType: 1,
-          renderLargerThumbnail: true,
-          sourceUrl: video.url
-        }
-      }
-    }, { quoted: mek });
+      fileName: `${meta.title}.mp3`
+    }, { quoted: m });
+
+    reply("✅ Audio successfully sent!");
 
   } catch (err) {
-    console.log("PLAY ERROR:", err);
-    reply("❌ Audio play nahi ho rahi");
+    console.error(err);
+    reply("❌ Error a gaya bhai, thori dair baad try karo!");
   }
 });
