@@ -1,72 +1,95 @@
-const axios = require("axios");
-const config = require("../config");
-const { cmd } = require("../command");
+const { cmd } = require('../command');
+const yts = require('yt-search');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const stream = require('stream');
+const { promisify } = require('util');
+const pipeline = promisify(stream.pipeline);
 
 cmd({
-  pattern: "play",
-  alias: ["mp3", "song", "ytmp3"],
-  react: "🎧",
-  desc: "Download YouTube MP3",
-  category: "download",
-  use: ".play3 <YT URL>",
-  filename: __filename
-}, async (conn, m, msg, { from, q, reply }) => {
-  try {
-    if (!q) return reply("❌ YouTube link do bhai chaprio waly kam nai kro!");
+    pattern: "play",
+    alias: ["song", "audio"],
+    react: "🎵",
+    desc: "YouTube search & MP3 download",
+    category: "download",
+    use: ".play <song name>",
+    filename: __filename
+}, async (conn, mek, m, { from, args, reply }) => {
+    try {
+        const query = args.join(" ");
+        if (!query) return reply("❌ Bhai song name likho chaprio waly kam nai kr fareed chapri ki tra");
 
-    // API URL
-    const apiUrl = `https://arslan-apis.vercel.app/download/ytmp3?url=${encodeURIComponent(q)}`;
+        await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
-    // Fetch Data
-    const { data } = await axios.get(apiUrl);
+        // 🔍 YouTube search
+        const search = await yts(query);
+        if (!search.videos.length) {
+            return reply("❌ Koi result nahi mila");
+        }
 
-    if (!data.status || !data.result?.download?.url) {
-      return reply("❌ MP3 generate nahi ho saki!");
-    }
+        const video = search.videos[0];
 
-    const meta = data.result.metadata;
-    const audioUrl = data.result.download.url;
+        // 🎧 Download API (tumhari)
+        const apiUrl = `https://arslan-apis.vercel.app/download/ytmp3?url=${video.url}`;
+        const res = await axios.get(apiUrl, { timeout: 60000 });
 
-    // Caption
-    const caption = `
-*BOSS-MD WHATSAPP BOT*
+        if (
+            !res.data ||
+            !res.data.status ||
+            !res.data.result ||
+            !res.data.result.download ||
+            !res.data.result.download.url
+        ) {
+            return reply("❌ Audio download failed");
+        }
 
-🎵 *Title:* ${meta.title}
-🎧 *Quality:* 128kbps
-📁 *Type:* MP3
+        const dlUrl = res.data.result.download.url;
+        const meta = res.data.result.metadata;
 
-${config.FOOTER || "> © *Powered By Boss-MD*"}
-`;
+        // ⬇️ Download audio
+        const tempDir = path.join(__dirname, 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-    // Thumbnail + info
-    await conn.sendMessage(from, {
-      image: { url: meta.thumbnail },
-      caption
-    }, { quoted: m });
+        const filePath = path.join(tempDir, `play_${Date.now()}.mp3`);
+        const audioStream = await axios({
+            method: "GET",
+            url: dlUrl,
+            responseType: "stream",
+            timeout: 120000
+        });
 
-    // Sending Audio
-    await conn.sendMessage(from, {
-      audio: { url: audioUrl },
-      mimetype: "audio/mpeg",
-      fileName: `${meta.title}.mp3`,
-caption: `🎵 *${firstSong.title}*\n⏱️ Duration: ${firstSong.duration}s\n🎚️ Quality: ${firstSong.quality.toUpperCase()}\n\n> © Boss-MD`,
+        await pipeline(audioStream.data, fs.createWriteStream(filePath));
+        const audioBuffer = fs.readFileSync(filePath);
+
+        // 📤 Send audio
+        await conn.sendMessage(from, {
+            audio: audioBuffer,
+            mimetype: "audio/mpeg",
+            fileName: `${meta.title}.mp3`,
+            caption: `🎵 *${meta.title}*\n🎚️ Quality: ${res.data.result.download.quality}\n\n> © Arslan-MD`,
             contextInfo: {
                 externalAdReply: {
-                    title: firstSong.title.length > 50 ? `${firstSong.title.substring(0, 22)}...` : firstSong.title,
-                    body: `🎶 ${firstSong.quality.toUpperCase()} | Duration: ${firstSong.duration}s\nBoss-MD`,
+                    title: meta.title.length > 40
+                        ? meta.title.substring(0, 40) + "..."
+                        : meta.title,
+                    body: "YouTube MP3",
+                    thumbnailUrl: meta.thumbnail,
+                    sourceUrl: video.url,
                     mediaType: 1,
-                    thumbnailUrl: firstSong.thumbnail,
-                    sourceUrl: firstSong.videoUrl,
-                    showAdAttribution: false,
                     renderLargerThumbnail: true
                 }
             }
-    }, { quoted: m });
+        }, { quoted: mek });
 
-    reply("✅ Audio successfully sent!");
+        // 🧹 Cleanup
+        fs.unlinkSync(filePath);
 
-  } catch (err) {
-    console.error(err);
-    reply("❌ Error a gaya bhai, thori dair baad try karo!");
-  }
+        await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
+
+    } catch (err) {
+        console.error("PLAY CMD ERROR:", err);
+        reply("❌ Error aa gaya bhai, baad me try karo");
+        await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
+    }
 });
