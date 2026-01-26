@@ -2,8 +2,6 @@ const { cmd } = require('../command');
 const axios = require('axios');
 const yts = require('yt-search');
 
-const izumi = { baseURL: "https://izumiiiiiiii.dpdns.org" };
-
 const AXIOS_DEFAULTS = {
     timeout: 60000,
     headers: {
@@ -12,33 +10,60 @@ const AXIOS_DEFAULTS = {
     }
 };
 
-async function tryRequest(getter, attempts = 3) {
-    let lastError;
-    for (let attempt = 1; attempt <= attempts; attempt++) {
+// NEW WORKING APIS
+const VIDEO_APIS = [
+    {
+        name: "API 1",
+        getUrl: (videoId) => `https://ytdl.raghavendraochi.workers.dev/api/youtube?url=https://www.youtube.com/watch?v=${videoId}&quality=720`
+    },
+    {
+        name: "API 2", 
+        getUrl: (videoId) => `https://youtube-video-download-info.p.rapidapi.com/dl?id=${videoId}`
+    },
+    {
+        name: "API 3",
+        getUrl: (videoId) => `https://yt-api.p.riteshw.workers.dev/dl?id=${videoId}`
+    }
+];
+
+async function getVideoDownloadUrl(youtubeUrl, videoId) {
+    for (let api of VIDEO_APIS) {
         try {
-            return await getter();
-        } catch (err) {
-            lastError = err;
-            if (attempt < attempts) await new Promise(r => setTimeout(r, 1000 * attempt));
+            const apiUrl = api.getUrl(videoId);
+            console.log(`Trying ${api.name}: ${apiUrl}`);
+            
+            const response = await axios.get(apiUrl, AXIOS_DEFAULTS);
+            
+            // Check different response formats
+            if (response.data) {
+                // Format 1: Direct download link
+                if (response.data.download && response.data.download.includes('.mp4')) {
+                    return { 
+                        download: response.data.download,
+                        title: response.data.title || "Video"
+                    };
+                }
+                // Format 2: Nested result
+                if (response.data.result && response.data.result.download) {
+                    return { 
+                        download: response.data.result.download,
+                        title: response.data.result.title || "Video"
+                    };
+                }
+                // Format 3: Links array
+                if (response.data.links && response.data.links[0] && response.data.links[0].url) {
+                    return { 
+                        download: response.data.links[0].url,
+                        title: response.data.title || "Video"
+                    };
+                }
+            }
+        } catch (error) {
+            console.log(`${api.name} failed: ${error.message}`);
+            continue;
         }
     }
-    throw lastError;
-}
-
-async function getIzumiVideoByUrl(youtubeUrl) {
-    const apiUrl = `${izumi.baseURL}/downloader/youtube?url=${encodeURIComponent(youtubeUrl)}&format=720`;
-    const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
-    if (res?.data?.result?.download) return res.data.result;
-    throw new Error('Izumi API returned no download link');
-}
-
-async function getOkatsuVideoByUrl(youtubeUrl) {
-    const apiUrl = `https://okatsu-rolezapiiz.vercel.app/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
-    if (res?.data?.result?.mp4) {
-        return { download: res.data.result.mp4, title: res.data.result.title };
-    }
-    throw new Error('Okatsu API returned no mp4');
+    throw new Error('All video APIs failed');
 }
 
 cmd({
@@ -70,6 +95,9 @@ cmd({
 
         if (query.startsWith('http://') || query.startsWith('https://')) {
             videoUrl = query;
+            // Extract video ID from URL
+            const urlMatch = query.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            videoInfo.videoId = urlMatch ? urlMatch[1] : null;
         } else {
             const { videos } = await yts(query);
             if (!videos || videos.length === 0) {
@@ -80,6 +108,14 @@ cmd({
             }
             videoInfo = videos[0];
             videoUrl = videoInfo.url;
+            videoInfo.videoId = videoInfo.videoId;
+        }
+
+        if (!videoInfo.videoId) {
+            await sock.sendMessage(message.chat, { 
+                text: "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Invalid YouTube URL*\n│ 💡 Provide valid YouTube link\n└─────────────" 
+            }, { quoted: message });
+            return;
         }
 
         const title = videoInfo.title || "YouTube Video";
@@ -91,15 +127,19 @@ cmd({
         // 📸 Send info with stylish caption
         await sock.sendMessage(message.chat, {
             image: { url: thumb },
-            caption: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🎬 *${title}*\n│ ⏱ *Duration:* ${duration}\n│ 👁 *Views:* ${views}\n│ 👤 *Channel:* ${author}\n│ 📥 *Downloading video...*\n└─────────────\n\n*© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ꧁𓊈𒆜 𝑩𝒐𝒔𝒔-𝒎𝒅 𒆜𓊉꧂*`
+            caption: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🎬 *${title}*\n│ ⏱ *Duration:* ${duration}\n│ 👁 *Views:* ${views}\n│ 👤 *Channel:* ${author}\n│ 📥 *Finding download link...*\n└─────────────\n\n*© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ꧁𓊈𒆜 𝑩𝒐𝒔𝒔-𝒎𝒅 𒆜𓊉꧂*`
         }, { quoted: message });
 
-        // 🌀 Try Izumi first, fallback to Okatsu
+        // 🌀 Get download URL using new APIs
         let videoData;
         try {
-            videoData = await getIzumiVideoByUrl(videoUrl);
-        } catch (e1) {
-            videoData = await getOkatsuVideoByUrl(videoUrl);
+            videoData = await getVideoDownloadUrl(videoUrl, videoInfo.videoId);
+        } catch (error) {
+            console.error('Download API error:', error);
+            await sock.sendMessage(message.chat, { 
+                text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download service temporary unavailable*\n│ 💡 Please try again later\n└─────────────` 
+            }, { quoted: message });
+            return;
         }
 
         // 📁 Send as document with stylish processing message
@@ -111,7 +151,7 @@ cmd({
         await sock.sendMessage(message.chat, {
             document: { url: videoData.download },
             mimetype: 'video/mp4',
-            fileName: `${videoData.title || title}.mp4`
+            fileName: `${(videoData.title || title).substring(0, 100)}.mp4`
         }, { quoted: message });
 
     } catch (error) {
