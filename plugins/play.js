@@ -29,7 +29,7 @@ cmd({
 
     // Caption
     const caption = `
-*ANAYAT-AI WHATSAPP BOT*
+*BOSS-MD WHATSAPP BOT*
 
 🎵 *Title:* ${meta.title}
 🎧 *Quality:* 128kbps
@@ -48,7 +48,19 @@ ${config.FOOTER || "> © *Powered By Boss-MD*"}
     await conn.sendMessage(from, {
       audio: { url: audioUrl },
       mimetype: "audio/mpeg",
-      fileName: `${meta.title}.mp3`
+      fileName: `${meta.title}.mp3`,
+caption: `🎵 *${firstSong.title}*\n⏱️ Duration: ${firstSong.duration}s\n🎚️ Quality: ${firstSong.quality.toUpperCase()}\n\n> © Boss-MD`,
+            contextInfo: {
+                externalAdReply: {
+                    title: firstSong.title.length > 50 ? `${firstSong.title.substring(0, 22)}...` : firstSong.title,
+                    body: `🎶 ${firstSong.quality.toUpperCase()} | Duration: ${firstSong.duration}s\nBoss-MD`,
+                    mediaType: 1,
+                    thumbnailUrl: firstSong.thumbnail,
+                    sourceUrl: firstSong.videoUrl,
+                    showAdAttribution: false,
+                    renderLargerThumbnail: true
+                }
+            }
     }, { quoted: m });
 
     reply("✅ Audio successfully sent!");
