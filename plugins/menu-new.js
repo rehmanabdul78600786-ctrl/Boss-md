@@ -8,8 +8,20 @@ cmd({
     try {
         const totalCommands = Object.keys(commands).length;
         
+        // runtime function define کریں
+        const runtime = (seconds) => {
+            const days = Math.floor(seconds / (24 * 60 * 60));
+            seconds %= 24 * 60 * 60;
+            const hours = Math.floor(seconds / (60 * 60));
+            seconds %= 60 * 60;
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            return `${days}d ${hours}h ${minutes}m ${secs}s`;
+        };
+
         // 1. پہلے VOICE MESSAGE بھیجیں
-        const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3"; // آپ کی آواز کا لنک
+        const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3";
         
         await conn.sendMessage(
             from,
@@ -89,7 +101,7 @@ ${config.OWNER_NAME}
             from,
             {
                 image: { 
-                    url: 'https://files.catbox.moe/xla7at.jpg' // آپ کی VIP تصویر
+                    url: 'https://files.catbox.moe/xla7at.jpg'
                 },
                 caption: menuImage,
                 contextInfo: {
@@ -101,43 +113,13 @@ ${config.OWNER_NAME}
             { quoted: mek }
         );
 
-        // 4. انٹرایکٹو بٹنز (اگر سپورٹ کرتا ہو)
-        try {
-            await conn.sendMessage(
-                from,
-                {
-                    text: "📱 *Interactive Menu*\n\nSelect an option:",
-                    footer: "VIP Premium Menu v2.0",
-                    buttons: [
-                        { buttonId: `${prefix}menu 1`, buttonText: { displayText: "📥 Download" }, type: 1 },
-                        { buttonId: `${prefix}menu 2`, buttonText: { displayText: "👥 Group" }, type: 1 },
-                        { buttonId: `${prefix}menu 3`, buttonText: { displayText: "😄 Fun" }, type: 1 },
-                        { buttonId: `${prefix}menu 4`, buttonText: { displayText: "👑 Owner" }, type: 1 }
-                    ],
-                    headerType: 1
-                },
-                { quoted: mek }
-            );
-        } catch (e) {
-            // اگر بٹنز سپورٹ نہیں کرتا تو چھوڑ دیں
-            console.log("Buttons not supported");
-        }
-
-// آپ کا فائنل میسج
-await conn.sendMessage(
-    from,
-    {
-        text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
-    },
-    { quoted: mek }
-);
-
-// ============ یہاں menuData کو اندر منتقل کریں ============
-
-const menuData = {
-    '1': {
-        title: "📥 *DOWNLOAD MENU* 📥",
-        content: `▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+        // 4. اگر argument دیا گیا ہو تو sub-menu دکھائیں
+        const args = m.text ? m.text.split(' ').slice(1) : [];
+        if (args[0]) {
+            const menuData = {
+                '1': {
+                    title: "📥 *DOWNLOAD MENU* 📥",
+                    content: `▰▰▰▰▰▰▰▰▰▰▰▰▰▰
    🎵 MUSIC & VIDEO
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
@@ -158,16 +140,13 @@ const menuData = {
 • ${prefix}mediafire [url]
 
 > VIP Download Tools Activated!`
-    },
-    '2': {
-        title: "👥 *Group Menu* 👥",
-        content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
+                },
+                '2': {
+                    title: "👥 *GROUP MENU* 👥",
+                    content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
 ┃★╭──────────────
 ┃★│ 🛠️ *Management*
 ┃★│ • grouplink
-┃★│ • kickall
-┃★│ • kickall2
-┃★│ • kickall3
 ┃★│ • add @user
 ┃★│ • remove @user
 ┃★│ • kick @user
@@ -176,246 +155,82 @@ const menuData = {
 ┃★│ ⚡ *Admin Tools*
 ┃★│ • promote @user
 ┃★│ • demote @user
-┃★│ • dismiss 
-┃★│ • revoke
 ┃★│ • mute [time]
 ┃★│ • unmute
-┃★│ • lockgc
-┃★│ • unlockgc
 ┃★╰──────────────
 ┃★╭──────────────
 ┃★│ 🏷️ *Tagging*
 ┃★│ • tag @user
-┃★│ • hidetag [msg]
 ┃★│ • tagall
 ┃★│ • tagadmins
-┃★│ • invite
 ┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '3': {
-        title: "😄 *Fun Menu* 😄",
-        content: `╭━━━〔 *Fun Menu* 〕━━━┈⊷
+╰━━━━━━━━━━━━━━━┈⊷`
+                },
+                '3': {
+                    title: "😄 *FUN MENU* 😄",
+                    content: `╭━━━〔 *Fun Menu* 〕━━━┈⊷
 ┃★╭──────────────
 ┃★│ 🎭 *Interactive*
 ┃★│ • shapar
 ┃★│ • rate @user
-┃★│ • insult @user
-┃★│ • hack @user
-┃★│ • ship @user1 @user2
-┃★│ • character
-┃★│ • pickup
 ┃★│ • joke
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😂 *Reactions*
-┃★│ • hrt
-┃★│ • hpy
-┃★│ • syd
-┃★│ • anger
-┃★│ • shy
-┃★│ • kiss
-┃★│ • mon
-┃★│ • cunfuzed
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '4': {
-        title: "👑 *Owner Menu* 👑",
-        content: `╭━━━〔 *Owner Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ⚠️ *Restricted*
-┃★│ • block @user
-┃★│ • unblock @user
-┃★│ • fullpp [img]
-┃★│ • setpp [img]
-┃★│ • restart
-┃★│ • shutdown
-┃★│ • updatecmd
-┃★╰──────────────
-┃★╭──────────────
-┃★│ ℹ️ *Info Tools*
-┃★│ • gjid
-┃★│ • jid @user
-┃★│ • listcmd
-┃★│ • allmenu
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '5': {
-        title: "🤖 *AI Menu* 🤖",
-        content: `╭━━━〔 *AI Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 💬 *Chat AI*
-┃★│ • ai [query]
-┃★│ • gpt3 [query]
-┃★│ • gpt2 [query]
-┃★│ • gptmini [query]
-┃★│ • gpt [query]
-┃★│ • meta [query]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🖼️ *Image AI*
-┃★│ • imagine [text]
-┃★│ • imagine2 [text]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🔍 *Specialized*
-┃★│ • blackbox [query]
-┃★│ • luma [query]
-┃★│ • dj [query]
-┃★│ • khan [query]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '6': {
-        title: "🎎 *Anime Menu* 🎎",
-        content: `╭━━━〔 *Anime Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🖼️ *Images*
-┃★│ • fack
-┃★│ • dog
-┃★│ • awoo
-┃★│ • garl
-┃★│ • waifu
-┃★│ • neko
-┃★│ • megnumin
-┃★│ • maid
-┃★│ • loli
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🎭 *Characters*
-┃★│ • animegirl
-┃★│ • animegirl1-5
-┃★│ • anime1-5
-┃★│ • foxgirl
-┃★│ • naruto
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '7': {
-        title: "🔄 *Convert Menu* 🔄",
-        content: `╭━━━〔 *Convert Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🖼️ *Media*
-┃★│ • sticker [img]
-┃★│ • sticker2 [img]
-┃★│ • emojimix 😎+😂
-┃★│ • take [name,text]
-┃★│ • tomp3 [video]
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 📝 *Text*
-┃★│ • fancy [text]
-┃★│ • tts [text]
-┃★│ • trt [text]
-┃★│ • base64 [text]
-┃★│ • unbase64 [text]
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '8': {
-        title: "📌 *Other Menu* 📌",
-        content: `╭━━━〔 *Other Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ 🕒 *Utilities*
-┃★│ • timenow
-┃★│ • date
-┃★│ • count [num]
-┃★│ • calculate [expr]
-┃★│ • countx
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🎲 *Random*
-┃★│ • flip
-┃★│ • coinflip
-┃★│ • rcolor
-┃★│ • roll
 ┃★│ • fact
 ┃★╰──────────────
 ┃★╭──────────────
-┃★│ 🔍 *Search*
-┃★│ • define [word]
-┃★│ • news [query]
-┃★│ • movie [name]
-┃★│ • weather [loc]
+┃★│ 😂 *Games*
+┃★│ • roll
+┃★│ • flip
+┃★│ • rcolor
 ┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '9': {
-        title: "💞 *Reactions Menu* 💞",
-        content: `╭━━━〔 *Reactions Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ❤️ *Affection*
-┃★│ • cuddle @user
-┃★│ • hug @user
-┃★│ • kiss @user
-┃★│ • lick @user
-┃★│ • pat @user
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😂 *Funny*
-┃★│ • bully @user
-┃★│ • bonk @user
-┃★│ • yeet @user
-┃★│ • slap @user
-┃★│ • kill @user
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 😊 *Expressions*
-┃★│ • blush @user
-┃★│ • smile @user
-┃★│ • happy @user
-┃★│ • wink @user
-┃★│ • poke @user
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    },
-    '10': {
-        title: "🏠 *Main Menu* 🏠",
-        content: `╭━━━〔 *Main Menu* 〕━━━┈⊷
-┃★╭──────────────
-┃★│ ℹ️ *Bot Info*
-┃★│ • ping
-┃★│ • live
-┃★│ • alive
-┃★│ • runtime
-┃★│ • uptime
-┃★│ • repo
-┃★│ • owner
-┃★╰──────────────
-┃★╭──────────────
-┃★│ 🛠️ *Controls*
-┃★│ • menu
-┃★│ • menu2
-┃★│ • restart
-┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷
-> ${config.DESCRIPTION}`,
-        image: true
-    }
-};
+╰━━━━━━━━━━━━━━━┈⊷`
+                }
+            };
 
-                // Remove listener after 5 minutes
-        setTimeout(() => {
-            conn.ev.off("messages.upsert", handler);
-        }, 300000);
+            const selectedMenu = menuData[args[0]];
+            if (selectedMenu) {
+                await conn.sendMessage(
+                    from,
+                    {
+                        text: `*${selectedMenu.title}*\n\n${selectedMenu.content}\n\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰\nType *${prefix}menu* for main menu`,
+                        contextInfo: {
+                            mentionedJid: [m.sender]
+                        }
+                    },
+                    { quoted: mek }
+                );
+                return;
+            }
+        }
+
+        // 5. انٹرایکٹو بٹنز (اگر سپورٹ کرتا ہو)
+        try {
+            await conn.sendMessage(
+                from,
+                {
+                    text: "📱 *Interactive Menu*\n\nSelect an option:",
+                    footer: "VIP Premium Menu v2.0",
+                    buttons: [
+                        { buttonId: `${prefix}menu 1`, buttonText: { displayText: "📥 Download" }, type: 1 },
+                        { buttonId: `${prefix}menu 2`, buttonText: { displayText: "👥 Group" }, type: 1 },
+                        { buttonId: `${prefix}menu 3`, buttonText: { displayText: "😄 Fun" }, type: 1 },
+                        { buttonId: `${prefix}menu 4`, buttonText: { displayText: "👑 Owner" }, type: 1 }
+                    ],
+                    headerType: 1
+                },
+                { quoted: mek }
+            );
+        } catch (e) {
+            console.log("Buttons not supported");
+        }
+
+        // 6. فائنل میسج
+        await conn.sendMessage(
+            from,
+            {
+                text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
+            },
+            { quoted: mek }
+        );
 
     } catch (error) {
         console.error('Menu error:', error);
@@ -425,4 +240,4 @@ const menuData = {
             { quoted: mek }
         );
     }
-});  // ✅ بس یہیں ختم
+});
