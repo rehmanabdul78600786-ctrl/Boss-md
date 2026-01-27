@@ -158,16 +158,7 @@ const menuData = {
 
 > VIP Download Tools Activated!`
     },
-    // باقی menuData...
-};
-// ============ یہاں تک ============
-
-} catch (error) {
-    console.error('Menu error:', error);
-    // ...
-    }
-    },  // ✅ یہاں `,` لگائیں
-    '2': {  // ✅ '2': key بھی لگائیں
+    '2': {
         title: "👥 *Group Menu* 👥",
                 content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
 ┃★╭──────────────
