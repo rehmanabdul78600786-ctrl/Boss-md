@@ -17,7 +17,7 @@ cmd({
 
         await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
-        // 🔍 YouTube search
+        // 🔍 YouTube search (SOURCE OF TRUTH)
         const search = await yts(query);
         if (!search.videos || !search.videos.length) {
             return reply("❌ Koi result nahi mila");
@@ -25,7 +25,7 @@ cmd({
 
         const video = search.videos[0];
 
-        // 🎧 MP3 API (NEW – CLEAN RESPONSE)
+        // 🎧 MP3 API (sirf download ke liye)
         const apiUrl = `https://arslan-apis.vercel.app/download/ytmp3?url=${encodeURIComponent(video.url)}`;
         const res = await axios.get(apiUrl, { timeout: 60000 });
 
@@ -39,26 +39,27 @@ cmd({
         }
 
         const dlUrl = res.data.download.url;
-        const meta = res.data.metadata;
         const quality = res.data.download.quality || "mp3";
 
-        // 🎵 SEND AUDIO
+        // 🎵 SEND AUDIO (yt-search metadata)
         await conn.sendMessage(from, {
             audio: { url: dlUrl },
             mimetype: "audio/mpeg",
             ptt: false,
-            fileName: `${meta.title}.mp3`,
+            fileName: `${video.title}.mp3`,
             caption:
-                `🎵 *${meta.title}*\n` +
+                `🎵 *${video.title}*\n` +
+                `👤 Channel: ${video.author.name}\n` +
+                `⏱️ Duration: ${video.timestamp}\n` +
                 `🎚️ Quality: ${quality}\n\n` +
                 `> © Arslan-MD`,
             contextInfo: {
                 externalAdReply: {
-                    title: meta.title.length > 40
-                        ? meta.title.substring(0, 40) + "..."
-                        : meta.title,
+                    title: video.title.length > 40
+                        ? video.title.substring(0, 40) + "..."
+                        : video.title,
                     body: "YouTube MP3",
-                    thumbnailUrl: meta.thumbnail,
+                    thumbnailUrl: video.thumbnail,
                     sourceUrl: video.url,
                     mediaType: 1,
                     renderLargerThumbnail: true
