@@ -1,45 +1,44 @@
+// plugins/menu.js
+const config = require('../config')
+const { cmd, commands } = require('../command');
+const path = require('path'); 
+const fs = require('fs');
+const { runtime } = require('../lib/functions');
+
 cmd({
     pattern: "menu",
-    desc: "Show interactive menu system",
+    alias: ["help","h","start"],
+    use: '.menu',
+    desc: "Show main interactive menu",
     category: "menu",
     react: "🎨",
     filename: __filename
-}, async (conn, mek, m, { from, reply, prefix }) => {
+}, 
+async (conn, mek, m, { from, reply, prefix, sender }) => {
     try {
-        const totalCommands = Object.keys(commands).length;
+        const totalCommands = Object.keys(commands || {}).length;
         
-        // runtime function define کریں
-        const runtime = (seconds) => {
-            const days = Math.floor(seconds / (24 * 60 * 60));
-            seconds %= 24 * 60 * 60;
-            const hours = Math.floor(seconds / (60 * 60));
-            seconds %= 60 * 60;
-            const minutes = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            
-            return `${days}d ${hours}h ${minutes}m ${secs}s`;
-        };
+        // VOICE MESSAGE بھیجیں (اگر ہو تو)
+        try {
+            const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3";
+            await conn.sendMessage(
+                from,
+                { 
+                    audio: { url: voiceUrl },
+                    mimetype: 'audio/mpeg',
+                    ptt: true,
+                    fileName: 'VIP-Menu-Voice.mp3'
+                },
+                { quoted: mek }
+            );
+        } catch (voiceError) {
+            console.log("Voice not sent:", voiceError);
+        }
 
-        // 1. پہلے VOICE MESSAGE بھیجیں
-        const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3";
-        
-        await conn.sendMessage(
-            from,
-            { 
-                audio: { url: voiceUrl },
-                mimetype: 'audio/mpeg',
-                ptt: true,
-                fileName: 'VIP-Menu-Voice.mp3'
-            },
-            { quoted: mek }
-        );
-
-        // 2. پھر IMAGE بھیجیں
-        const menuImage = `
+        // IMAGE کے ساتھ MAIN MENU
+        const menuText = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━╮
-┃                                        
 ┃   ░▒▓█ BOSS-MD v3.0 █▓▒░  
-┃                                        
 ╰━━━━━━━━━━━━━━━━━━━━━━━╯
 
 ╔══════════════════════╗
@@ -48,25 +47,25 @@ cmd({
 
 ┌─「 📊 BOT STATUS 」─┐
 │ ✦ Owner: ${config.OWNER_NAME}
-│ ✦ Prefix: ${prefix}
+│ ✦ Prefix: [${config.PREFIX}]
 │ ✦ Commands: ${totalCommands}
 │ ✦ Runtime: ${runtime(process.uptime())}
-│ ✦ Version: VIP 2.0
+│ ✦ Version: VIP 3.0
 └─────────────────────┘
 
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
    🎯 QUICK MENU
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-[1] 📥 Download Tools
-[2] 👥 Group Manager  
-[3] 😄 Fun & Games
-[4] 👑 Owner Panel
-[5] 🤖 AI Assistant
-[6] 🎌 Anime World
-[7] 🔄 Converter
-[8] 🛠️ Utilities
-[9] 💖 Reactions
+📥 ${prefix}menu 1 - Download Tools
+👥 ${prefix}menu 2 - Group Manager  
+😄 ${prefix}menu 3 - Fun & Games
+👑 ${prefix}menu 4 - Owner Panel
+🤖 ${prefix}menu 5 - AI Assistant
+🎌 ${prefix}menu 6 - Anime World
+🔄 ${prefix}menu 7 - Converter
+🛠️ ${prefix}menu 8 - Utilities
+💖 ${prefix}menu 9 - Reactions
 
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
    💎 VIP FEATURES
@@ -77,7 +76,6 @@ cmd({
 ✦ Interactive System
 ✦ Premium Styling
 ✦ Fast Performance
-✦ Secure & Stable
 
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
    🚀 HOW TO USE
@@ -96,16 +94,13 @@ ${config.OWNER_NAME}
 
 > ${config.DESCRIPTION}`;
 
-        // 3. تصویر کے ساتھ مینو بھیجیں
         await conn.sendMessage(
             from,
             {
-                image: { 
-                    url: 'https://files.catbox.moe/xla7at.jpg'
-                },
-                caption: menuImage,
+                image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/xla7at.jpg' },
+                caption: menuText,
                 contextInfo: {
-                    mentionedJid: [m.sender],
+                    mentionedJid: [sender],
                     forwardingScore: 999,
                     isForwarded: true
                 }
@@ -113,7 +108,7 @@ ${config.OWNER_NAME}
             { quoted: mek }
         );
 
-        // 4. اگر argument دیا گیا ہو تو sub-menu دکھائیں
+        // اگر argument دیا گیا ہو تو sub-menu دکھائیں
         const args = m.text ? m.text.split(' ').slice(1) : [];
         if (args[0]) {
             const menuData = {
@@ -139,7 +134,7 @@ ${config.OWNER_NAME}
 • ${prefix}twitter [url]
 • ${prefix}mediafire [url]
 
-> VIP Download Tools Activated!`
+> Type ${prefix}menu 2 for Group Menu`
                 },
                 '2': {
                     title: "👥 *GROUP MENU* 👥",
@@ -164,7 +159,8 @@ ${config.OWNER_NAME}
 ┃★│ • tagall
 ┃★│ • tagadmins
 ┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷`
+╰━━━━━━━━━━━━━━━┈⊷
+> Type ${prefix}menu 3 for Fun Menu`
                 },
                 '3': {
                     title: "😄 *FUN MENU* 😄",
@@ -182,7 +178,8 @@ ${config.OWNER_NAME}
 ┃★│ • flip
 ┃★│ • rcolor
 ┃★╰──────────────
-╰━━━━━━━━━━━━━━━┈⊷`
+╰━━━━━━━━━━━━━━━┈⊷
+> Type ${prefix}menu 4 for Owner Menu`
                 }
             };
 
@@ -193,7 +190,7 @@ ${config.OWNER_NAME}
                     {
                         text: `*${selectedMenu.title}*\n\n${selectedMenu.content}\n\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰\nType *${prefix}menu* for main menu`,
                         contextInfo: {
-                            mentionedJid: [m.sender]
+                            mentionedJid: [sender]
                         }
                     },
                     { quoted: mek }
@@ -202,32 +199,11 @@ ${config.OWNER_NAME}
             }
         }
 
-        // 5. انٹرایکٹو بٹنز (اگر سپورٹ کرتا ہو)
-        try {
-            await conn.sendMessage(
-                from,
-                {
-                    text: "📱 *Interactive Menu*\n\nSelect an option:",
-                    footer: "VIP Premium Menu v2.0",
-                    buttons: [
-                        { buttonId: `${prefix}menu 1`, buttonText: { displayText: "📥 Download" }, type: 1 },
-                        { buttonId: `${prefix}menu 2`, buttonText: { displayText: "👥 Group" }, type: 1 },
-                        { buttonId: `${prefix}menu 3`, buttonText: { displayText: "😄 Fun" }, type: 1 },
-                        { buttonId: `${prefix}menu 4`, buttonText: { displayText: "👑 Owner" }, type: 1 }
-                    ],
-                    headerType: 1
-                },
-                { quoted: mek }
-            );
-        } catch (e) {
-            console.log("Buttons not supported");
-        }
-
-        // 6. فائنل میسج
+        // FINAL MESSAGE
         await conn.sendMessage(
             from,
             {
-                text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
+                text: `🎉 *VIP MENU ACTIVATED!*\n\n✅ Premium Menu Sent\n✅ Voice Message Sent\n✅ Interactive Ready\n\nType *${prefix}menu2* for all commands\nType *${prefix}owner* for contact\n\n${config.DESCRIPTION}`
             },
             { quoted: mek }
         );
