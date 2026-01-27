@@ -13,7 +13,7 @@ cmd({
 }, async (conn, mek, m, { from, args, reply }) => {
     try {
         const query = args.join(" ");
-        if (!query) return reply("❌ Bhai song name likho chaprio waly kam nai kro fareed chapri ki tra");
+        if (!query) return reply("❌ Bhai song name likho chaprio waly kam nai kro");
 
         await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
@@ -43,16 +43,25 @@ cmd({
         const meta = res.data.result.metadata;
         const quality = res.data.result.download.quality || "128kbps";
 
-        // 🎵 SEND AUDIO (DIRECT STREAM – SAFE)
+        // ✅ FIX 1: Download audio to buffer first
+        const audioResponse = await axios.get(dlUrl, {
+            responseType: 'arraybuffer',
+            timeout: 60000
+        });
+        
+        const audioBuffer = Buffer.from(audioResponse.data);
+
+        // ✅ FIX 2: Send as buffer instead of URL
         await conn.sendMessage(from, {
-            audio: { url: dlUrl },
+            audio: audioBuffer, // ✅ Buffer use karo, URL nahi
             mimetype: "audio/mpeg",
             ptt: false,
-            fileName: `${meta.title}.mp3`,
+            fileName: `${meta.title.substring(0, 50)}.mp3`,
             caption:
                 `🎵 *${meta.title}*\n` +
+                `⏱️ Duration: ${video.timestamp || "Unknown"}\n` +
                 `🎚️ Quality: ${quality}\n\n` +
-                `> © Arslan-MD`,
+                `> © BOSS-MD`,
             contextInfo: {
                 externalAdReply: {
                     title: meta.title.length > 40
@@ -71,7 +80,20 @@ cmd({
 
     } catch (err) {
         console.error("PLAY ERROR:", err);
-        reply("❌ Bhai error aa gaya, thori der baad try karo");
-        await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
+        
+        // Alternative method if first fails
+        try {
+            const video = await yts(query);
+            if (video.videos && video.videos[0]) {
+                await conn.sendMessage(from, {
+                    audio: { url: `https://www.youtubepp.com/watch?v=${video.videos[0].videoId}` },
+                    mimetype: 'audio/mpeg',
+                    fileName: 'song.mp3'
+                }, { quoted: mek });
+            }
+        } catch (fallbackErr) {
+            reply("❌ Bhai error aa gaya, thori der baad try karo");
+            await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
+        }
     }
 });
