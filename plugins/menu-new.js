@@ -167,8 +167,9 @@ const menuData = {
 • ${prefix}mediafire [url]
 
 > VIP Download Tools Activated!`
-    }title: 
-                           "👥 *Group Menu* 👥",
+    },  // ✅ یہاں `,` لگائیں
+    '2': {  // ✅ '2': key بھی لگائیں
+        title: "👥 *Group Menu* 👥",
                 content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
 ┃★╭──────────────
 ┃★│ 🛠️ *Management*
