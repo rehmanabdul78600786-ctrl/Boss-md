@@ -10,12 +10,13 @@ cmd({
     category: "download",
     use: ".play <song name>",
     filename: __filename
-}, async (conn, mek, m, { from, args, reply }) => {
+}, async (conn, mek, m, { from, reply, text, pushName }) => {
     try {
-        const query = args.join(" ");
+        const query = text || mek.message?.conversation?.split(' ').slice(1).join(' ') || '';
+        
         if (!query) return reply("❌ Bhai song name likho chaprio waly kam nai kro");
 
-        await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
+        await conn.sendMessage(from, { react: { text: "⏳", key: mek.key } });
 
         // 🔍 YouTube search
         const search = await yts(query);
@@ -24,76 +25,87 @@ cmd({
         }
 
         const video = search.videos[0];
+        console.log(`🎵 Searching: ${query} | Found: ${video.title}`);
 
-        // 🎧 MP3 API (tumhari)
-        const apiUrl = `https://arslan-apis.vercel.app/download/ytmp3?url=${video.url}`;
-        const res = await axios.get(apiUrl, { timeout: 60000 });
+        // 🎧 MP3 API (Working API)
+        const apiUrl = `https://yt-api.p.riteshw.workers.dev/dl?id=${video.videoId}&type=audio`;
+        
+        const res = await axios.get(apiUrl, { 
+            timeout: 60000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
 
-        if (
-            !res.data ||
-            !res.data.status ||
-            !res.data.result ||
-            !res.data.result.download ||
-            !res.data.result.download.url
-        ) {
-            return reply("❌ Audio generate nahi ho saka");
+        console.log('API Response:', res.data ? 'Received' : 'No data');
+
+        // Check response
+        if (!res.data || !res.data.download) {
+            // Try alternative API
+            const altApi = `https://api.agriyan.lol/ytaudio?url=${video.url}`;
+            const altRes = await axios.get(altApi, { timeout: 60000 });
+            
+            if (!altRes.data?.result?.url) {
+                return reply("❌ Audio generate nahi ho saka. Koi aur song try karo.");
+            }
+            
+            const dlUrl = altRes.data.result.url;
+            const audioResponse = await axios.get(dlUrl, {
+                responseType: 'arraybuffer',
+                timeout: 60000
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send audio
+            await conn.sendMessage(from, {
+                audio: audioBuffer,
+                mimetype: "audio/mpeg",
+                ptt: false,
+                fileName: `${video.title.substring(0, 50)}.mp3`,
+                caption: `🎵 *${video.title}*\n⏱️ ${video.timestamp || "Unknown"}\n👤 ${pushName || "User"}\n\n> © BOSS-MD`
+            }, { quoted: mek });
+            
+        } else {
+            // Original API working
+            const dlUrl = res.data.download;
+            const audioResponse = await axios.get(dlUrl, {
+                responseType: 'arraybuffer',
+                timeout: 60000
+            });
+            
+            const audioBuffer = Buffer.from(audioResponse.data);
+            
+            // Send audio
+            await conn.sendMessage(from, {
+                audio: audioBuffer,
+                mimetype: "audio/mpeg",
+                ptt: false,
+                fileName: `${video.title.substring(0, 50)}.mp3`,
+                caption: `🎵 *${video.title}*\n⏱️ ${video.timestamp || "Unknown"}\n👤 ${pushName || "User"}\n\n> © BOSS-MD`
+            }, { quoted: mek });
         }
 
-        const dlUrl = res.data.result.download.url;
-        const meta = res.data.result.metadata;
-        const quality = res.data.result.download.quality || "128kbps";
-
-        // ✅ FIX 1: Download audio to buffer first
-        const audioResponse = await axios.get(dlUrl, {
-            responseType: 'arraybuffer',
-            timeout: 60000
-        });
-        
-        const audioBuffer = Buffer.from(audioResponse.data);
-
-        // ✅ FIX 2: Send as buffer instead of URL
-        await conn.sendMessage(from, {
-            audio: audioBuffer, // ✅ Buffer use karo, URL nahi
-            mimetype: "audio/mpeg",
-            ptt: false,
-            fileName: `${meta.title.substring(0, 50)}.mp3`,
-            caption:
-                `🎵 *${meta.title}*\n` +
-                `⏱️ Duration: ${video.timestamp || "Unknown"}\n` +
-                `🎚️ Quality: ${quality}\n\n` +
-                `> © BOSS-MD`,
-            contextInfo: {
-                externalAdReply: {
-                    title: meta.title.length > 40
-                        ? meta.title.substring(0, 40) + "..."
-                        : meta.title,
-                    body: "YouTube MP3",
-                    thumbnailUrl: meta.thumbnail,
-                    sourceUrl: video.url,
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
+        await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
 
     } catch (err) {
         console.error("PLAY ERROR:", err);
         
-        // Alternative method if first fails
+        // Simple fallback
         try {
-            const video = await yts(query);
+            const video = await yts(text || 'shape of you');
             if (video.videos && video.videos[0]) {
+                await reply("🔄 Alternative method se bhej raha hoon...");
+                
                 await conn.sendMessage(from, {
-                    audio: { url: `https://www.youtubepp.com/watch?v=${video.videos[0].videoId}` },
+                    audio: { url: `https://www.yt-download.org/api/button/mp3/${video.videos[0].videoId}` },
                     mimetype: 'audio/mpeg',
-                    fileName: 'song.mp3'
+                    fileName: 'song.mp3',
+                    caption: `🎵 ${video.videos[0].title}\n⏱️ ${video.videos[0].timestamp}\n\n> © BOSS-MD`
                 }, { quoted: mek });
             }
         } catch (fallbackErr) {
-            reply("❌ Bhai error aa gaya, thori der baad try karo");
-            await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
+            reply("❌ Bhai error aa gaya, thori der baad try karo\nError: " + err.message);
         }
     }
 });
