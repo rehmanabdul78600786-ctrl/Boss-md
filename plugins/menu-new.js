@@ -493,7 +493,13 @@ const menuData = {
             conn.ev.off("messages.upsert", handler);
         }, 300000);
 
-    } catch (e) {
+    async (conn, mek, m, { from, reply, prefix }) => {
+    try {
+        // آپ کا پورا کوڈ
+        
+        // menuData اور handler کا کوڈ بھی یہیں اندر ہونا چاہیے
+        
+    } catch (e) {  // ✅ یہ catch main function کے اندر ہے
         console.error('Menu Error:', e);
         try {
             await conn.sendMessage(
@@ -505,5 +511,4 @@ const menuData = {
             console.log('Final error handling failed:', finalError);
         }
     }
-});
-    
+}  // <-- function کا closing brace
