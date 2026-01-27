@@ -1,352 +1,509 @@
-const { cmd } = require('../command');
-const config = require('../config');
-
-// 🎭 YOUR PICS (Multiple for rotation)
-const YOUR_PICS = [
-    "https://files.catbox.moe/w6d16s.jpg",
-    "https://files.catbox.moe/w6d16s.jpg",
-    "https://files.catbox.moe/w6d16s.jpg"
-];
-
-// 🎪 RANDOM QUOTES TO DISGUISE MENU
-const RANDOM_QUOTES = [
-    "✨ Success is not final, failure is not fatal.",
-    "🔥 The only way to do great work is to love what you do.",
-    "💎 Don't watch the clock; do what it does. Keep going.",
-    "🚀 The future belongs to those who believe in beauty.",
-    "🎯 It always seems impossible until it's done.",
-    "🌟 Your time is limited, don't waste it living someone else's life.",
-    "⚡ The harder I work, the more luck I seem to have.",
-    "🛡️ Life is what happens to you while you're busy making other plans."
-];
-
 cmd({
     pattern: "menu",
-    desc: "Hidden Scrollable Menu System",
+    desc: "Show interactive menu system",
     category: "menu",
-    react: "🌀",
+    react: "🎨",
     filename: __filename
-}, async (conn, mek, m, { from, reply, pushName, text, sender }) => {
+}, async (conn, mek, m, { from, reply, prefix }) => {
     try {
-        const user = pushName || "User";
-        const userId = sender.split('@')[0];
+        const totalCommands = Object.keys(commands).length;
         
-        // Check if VIP user (you can customize this)
-        const isVIP = userId === config.OWNER_NUMBER?.replace('+', '') || 
-                     userId === "923001234567"; // Add VIP numbers
+        // 1. پہلے VOICE MESSAGE بھیجیں
+        const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3"; // آپ کی آواز کا لنک
         
-        // Get random quote and pic
-        const randomQuote = RANDOM_QUOTES[Math.floor(Math.random() * RANDOM_QUOTES.length)];
-        const randomPic = YOUR_PICS[Math.floor(Math.random() * YOUR_PICS.length)];
-        
-        // ==================== HIDDEN MENU PAGE 1 ====================
-        const hiddenMenuPage1 = `
-${randomQuote}
+        await conn.sendMessage(
+            from,
+            { 
+                audio: { url: voiceUrl },
+                mimetype: 'audio/mpeg',
+                ptt: true,
+                fileName: 'VIP-Menu-Voice.mp3'
+            },
+            { quoted: mek }
+        );
 
-╔════════════════════════════════════╗
-║                                    ║  
-║        📱 *Device Information*     ║
-║                                    ║
-║  • User: ${user.substring(0, 15)}
-║  • ID: ${userId}
-║  • Time: ${new Date().toLocaleTimeString()}
-║  • Status: ✅ Online
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║    🎵 *Media Tools (Page 1/3)*     ║
-║                                    ║
-║  📥 .play [song]
-║    → Download high quality MP3
-║
-║  🎬 .video [name]
-║    → HD video download
-║
-║  📺 .drama [name]
-║    → Drama series download
-║
-║  📱 .fb [url]
-║    → Facebook video download
-║
-║  💃 .tiktok [url]
-║    → TikTok download
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║  🔄 *Page Navigation:*             ║
-║  • Type 'n' for next page         ║
-║  • Type 'p' for previous page     ║
-║  • Type 'vip' for VIP section     ║
-║                                    ║
-╚════════════════════════════════════╝
+        // 2. پھر IMAGE بھیجیں
+        const menuImage = `
+🟪🟪🟪🟪🟪🟪
+🟪                             🟪
+🟪      BOSS ULTRA MENU     🟪
+🟪                             🟪
+🟪
 
-_This looks like a normal message..._`;
+╔══════════════════════╗
+   🔥 PREMIUM EDITION 🔥
+╚══════════════════════╝
 
-        // Send first page with your pic
-        await conn.sendMessage(from, {
-            image: { url: randomPic },
-            caption: hiddenMenuPage1
-        }, { quoted: mek });
-        
-        // Send navigation instructions separately
-        await conn.sendMessage(from, {
-            text: `🌀 *Secret Navigation Activated*\n\nReply to this message with:\n• 'n' - Next page (2/3)\n• 'p' - Previous page\n• 'vip' - VIP Section ${isVIP ? '(Unlocked)' : '(Locked)'}\n• 'help' - Show all commands\n\n📌 _No one will know this is a menu_`
-        });
-        
-        // Store user session for navigation
-        const menuSession = {
-            userId: sender,
-            currentPage: 1,
-            lastActive: Date.now()
-        };
-        
-        // ==================== PAGE 2 CONTENT ====================
-        const hiddenMenuPage2 = `
-${randomQuote}
+┌─「 📊 BOT STATUS 」─┐
+│ ✦ Owner: ${config.OWNER_NAME}
+│ ✦ Prefix: ${prefix}
+│ ✦ Commands: ${totalCommands}
+│ ✦ Runtime: ${runtime(process.uptime())}
+│ ✦ Version: VIP 2.0
+└─────────────────────┘
 
-╔════════════════════════════════════╗
-║                                    ║  
-║     👥 *Group Management*          ║
-║           (Page 2/3)               ║
-║                                    ║
-║  ➕ .add @user
-║    → Add member to group
-║
-║  🚫 .kick @user
-║    → Remove member
-║
-║  ⬆️ .promote @user
-║    → Make admin
-║
-║  ⬇️ .demote @user
-║    → Remove admin
-║
-║  🏷️ .tagall
-║    → Mention everyone
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║     🤖 *AI & Tools*                ║
-║                                    ║
-║  🧠 .ai [query]
-║    → AI assistant
-║
-║  🤖 .gpt [query]
-║    → ChatGPT
-║
-║  🖼️ .image [text]
-║    → AI image generation
-║
-║  🎭 .disappear [s]
-║    → Vanishing messages
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║  🔄 *Navigation:* n / p / vip      ║
-║                                    ║
-╚════════════════════════════════════╝`;
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   🎯 QUICK MENU
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-        // ==================== PAGE 3 CONTENT ====================
-        const hiddenMenuPage3 = `
-${randomQuote}
+[1] 📥 Download Tools
+[2] 👥 Group Manager  
+[3] 😄 Fun & Games
+[4] 👑 Owner Panel
+[5] 🤖 AI Assistant
+[6] 🎌 Anime World
+[7] 🔄 Converter
+[8] 🛠️ Utilities
+[9] 💖 Reactions
 
-╔════════════════════════════════════╗
-║                                    ║  
-║     😄 *Fun & Entertainment*       ║
-║           (Page 3/3)               ║
-║                                    ║
-║  😂 .joke
-║    → Random jokes
-║
-║  🤣 .meme
-║    → Fresh memes
-║
-║  💬 .quote
-║    → Motivational quotes
-║
-║  💘 .ship @user1 @user2
-║    → Ship generator
-║
-║  👾 .hack @user
-║    → Fake hack
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║     🔧 *Utilities*                 ║
-║                                    ║
-║  🏷️ .sticker [image]
-║    → Create sticker
-║
-║  🔊 .tts [text]
-║    → Text to speech
-║
-║  ✨ .fancy [text]
-║    → Fancy text
-║
-║  🌤️ .weather [city]
-║    → Weather info
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║  🔄 *Navigation:* n / p / vip      ║
-║                                    ║
-╚════════════════════════════════════╝`;
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   💎 VIP FEATURES
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-        // ==================== VIP SECTION ====================
-        const vipSection = `
-🔐 *VIP ACCESS GRANTED*
+✦ Voice Integrated
+✦ High-Res Graphics  
+✦ Interactive System
+✦ Premium Styling
+✦ Fast Performance
+✦ Secure & Stable
 
-╔════════════════════════════════════╗
-║                                    ║  
-║        💎 *VIP SECTION*            ║
-║          (Exclusive)               ║
-║                                    ║
-║  📨 .senddm @user [msg]
-║    → Send private message
-║
-║  📢 .senddm all [msg]
-║    → Broadcast to all users
-║
-║  📊 .getinfo [user/group/bot]
-║    → Detailed information
-║
-║  👻 .disappear 604800 [msg]
-║    → 7-day vanishing msg
-║
-║  💣 .bomb 300 [msg]
-║    → 5-min self destruct
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║     🛡️ *Owner Tools*              ║
-║                                    ║
-║  🔒 .block @user
-║    → Block user from bot
-║
-║  🔓 .unblock @user
-║    → Unblock user
-║
-║  🔄 .restart
-║    → Restart bot
-║
-║  ⚡ .shutdown
-║    → Shutdown bot
-║                                    ║
-╠════════════════════════════════════╣
-║                                    ║
-║  VIP Access: ${user}
-║  Expires: Never
-║                                    ║
-╚════════════════════════════════════╝
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   🚀 HOW TO USE
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-_This section is only visible to VIP users_`;
+Type: ${prefix}menu <number>
+Example: ${prefix}menu 1
 
-        // Set up message handler for navigation
-        const messageHandler = async (msgData) => {
-            try {
-                const msg = msgData.messages[0];
-                if (!msg || msg.key.remoteJid !== from) return;
-                
-                const isReply = msg.message?.extendedTextMessage?.contextInfo?.stanzaId === mek.key.id;
-                if (!isReply) return;
-                
-                const userInput = (msg.message.conversation || "").toLowerCase().trim();
-                
-                // Handle navigation
-                if (userInput === 'n' || userInput === 'next') {
-                    if (menuSession.currentPage === 1) {
-                        await conn.sendMessage(from, {
-                            image: { url: randomPic },
-                            caption: hiddenMenuPage2
-                        });
-                        menuSession.currentPage = 2;
-                    } else if (menuSession.currentPage === 2) {
-                        await conn.sendMessage(from, {
-                            image: { url: randomPic },
-                            caption: hiddenMenuPage3
-                        });
-                        menuSession.currentPage = 3;
-                    }
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   📞 CONTACT
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+
+For VIP Support:
+${config.OWNER_NAME}
+@${config.OWNER_NUMBER}
+
+> ${config.DESCRIPTION}`;
+
+        // 3. تصویر کے ساتھ مینو بھیجیں
+        await conn.sendMessage(
+            from,
+            {
+                image: { 
+                    url: 'https://files.catbox.moe/xla7at.jpg' // آپ کی VIP تصویر
+                },
+                caption: menuImage,
+                contextInfo: {
+                    mentionedJid: [m.sender],
+                    forwardingScore: 999,
+                    isForwarded: true
                 }
-                else if (userInput === 'p' || userInput === 'prev' || userInput === 'previous') {
-                    if (menuSession.currentPage === 3) {
-                        await conn.sendMessage(from, {
-                            image: { url: randomPic },
-                            caption: hiddenMenuPage2
-                        });
-                        menuSession.currentPage = 2;
-                    } else if (menuSession.currentPage === 2) {
-                        await conn.sendMessage(from, {
-                            image: { url: randomPic },
-                            caption: hiddenMenuPage1
-                        });
-                        menuSession.currentPage = 1;
-                    }
-                }
-                else if (userInput === 'vip') {
-                    if (isVIP) {
-                        await conn.sendMessage(from, {
-                            image: { url: randomPic },
-                            caption: vipSection
-                        });
-                    } else {
-                        await conn.sendMessage(from, {
-                            text: "🔐 *VIP ACCESS DENIED*\n\nThis section is only available for VIP users.\n\nContact owner for VIP access."
-                        });
-                    }
-                }
-                else if (userInput === 'help') {
-                    await conn.sendMessage(from, {
-                        text: `📖 *Quick Commands List*\n\n• .play [song]\n• .video [name]\n• .drama [name]\n• .add @user\n• .kick @user\n• .ai [query]\n• .gpt [query]\n• .joke\n• .meme\n• .sticker [image]\n• .disappear [s]\n\nUse .menu for hidden navigation`
-                    });
-                }
-                
-                // Update session
-                menuSession.lastActive = Date.now();
-                
-            } catch (error) {
-                console.error("Menu navigation error:", error);
-            }
-        };
-        
-        // Add event listener
-        conn.ev.on("messages.upsert", messageHandler);
-        
-        // Remove listener after 5 minutes
-        setTimeout(() => {
-            conn.ev.off("messages.upsert", messageHandler);
-            conn.sendMessage(from, {
-                text: "⏰ *Navigation session expired*\nUse .menu again for new session"
-            });
-        }, 5 * 60 * 1000); // 5 minutes
-        
+            },
+            { quoted: mek }
+        );
+
+        // 4. انٹرایکٹو بٹنز (اگر سپورٹ کرتا ہو)
+        try {
+            await conn.sendMessage(
+                from,
+                {
+                    text: "📱 *Interactive Menu*\n\nSelect an option:",
+                    footer: "VIP Premium Menu v2.0",
+                    buttons: [
+                        { buttonId: `${prefix}menu 1`, buttonText: { displayText: "📥 Download" }, type: 1 },
+                        { buttonId: `${prefix}menu 2`, buttonText: { displayText: "👥 Group" }, type: 1 },
+                        { buttonId: `${prefix}menu 3`, buttonText: { displayText: "😄 Fun" }, type: 1 },
+                        { buttonId: `${prefix}menu 4`, buttonText: { displayText: "👑 Owner" }, type: 1 }
+                    ],
+                    headerType: 1
+                },
+                { quoted: mek }
+            );
+        } catch (e) {
+            // اگر بٹنز سپورٹ نہیں کرتا تو چھوڑ دیں
+            console.log("Buttons not supported");
+        }
+
+        // 5. فائنل میسج
+        await conn.sendMessage(
+            from,
+            {
+                text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
+            },
+            { quoted: mek }
+        );
+
     } catch (error) {
-        console.error("Hidden Menu Error:", error);
-        // Fallback to simple menu
-        await conn.sendMessage(from, {
-            text: `📱 *Quick Commands*\n\n🎵 .play [song]\n🎬 .video [name]\n👥 .add @user\n🤖 .ai [query]\n😄 .joke\n🎭 .disappear [s]\n\nUse .help for more`
-        }, { quoted: mek });
+        console.error('Menu error:', error);
+        await conn.sendMessage(
+            from,
+            { text: `❌ Menu Error\n\n${error.message}\n\nPlease try again!` },
+            { quoted: mek }
+        );
     }
 });
 
-// ==================== SIMPLE COMMAND FOR NON-VIP ====================
-cmd({
-    pattern: "help",
-    desc: "Simple help command",
-    category: "menu",
-    react: "📖",
-    filename: __filename
-}, async (conn, mek, m, { from, reply }) => {
-    await conn.sendMessage(from, {
-        text: `📖 *Available Commands*\n\n` +
-              `🎵 *Media:* .play .video .drama .fb .tiktok\n` +
-              `👥 *Group:* .add .kick .promote .tagall\n` +
-              `🤖 *AI:* .ai .gpt .image .blackbox\n` +
-              `😄 *Fun:* .joke .meme .quote .ship\n` +
-              `🎭 *Special:* .disappear .ghostpic .bomb\n` +
-              `🔧 *Tools:* .sticker .tts .weather\n\n` +
-              `💡 *Tip:* Use .menu for advanced navigation`
-    }, { quoted: mek });
-});
+// انٹرایکٹو مینو سسٹم (برقرار رکھیں)
+const menuData = {
+    '1': {
+        title: "📥 *DOWNLOAD MENU* 📥",
+        content: `▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   🎵 MUSIC & VIDEO
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-console.log("🌀 Hidden Scrollable Menu Loaded!");
+• ${prefix}play [song]
+• ${prefix}ytmp3 [url]
+• ${prefix}ytmp4 [url]
+• ${prefix}spotify [query]
+• ${prefix}song [name]
+
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+   📱 SOCIAL MEDIA
+▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+
+• ${prefix}facebook [url]
+• ${prefix}tiktok [url]
+• ${prefix}instagram [url]
+• ${prefix}twitter [url]
+• ${prefix}mediafire [url]
+
+> VIP Download Tools Activated!`
+    }
+        {
+                title: "👥 *Group Menu* 👥",
+                content: `╭━━━〔 *Group Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 🛠️ *Management*
+┃★│ • grouplink
+┃★│ • kickall
+┃★│ • kickall2
+┃★│ • kickall3
+┃★│ • add @user
+┃★│ • remove @user
+┃★│ • kick @user
+┃★╰──────────────
+┃★╭──────────────
+┃★│ ⚡ *Admin Tools*
+┃★│ • promote @user
+┃★│ • demote @user
+┃★│ • dismiss 
+┃★│ • revoke
+┃★│ • mute [time]
+┃★│ • unmute
+┃★│ • lockgc
+┃★│ • unlockgc
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🏷️ *Tagging*
+┃★│ • tag @user
+┃★│ • hidetag [msg]
+┃★│ • tagall
+┃★│ • tagadmins
+┃★│ • invite
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '3': {
+                title: "😄 *Fun Menu* 😄",
+                content: `╭━━━〔 *Fun Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 🎭 *Interactive*
+┃★│ • shapar
+┃★│ • rate @user
+┃★│ • insult @user
+┃★│ • hack @user
+┃★│ • ship @user1 @user2
+┃★│ • character
+┃★│ • pickup
+┃★│ • joke
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 😂 *Reactions*
+┃★│ • hrt
+┃★│ • hpy
+┃★│ • syd
+┃★│ • anger
+┃★│ • shy
+┃★│ • kiss
+┃★│ • mon
+┃★│ • cunfuzed
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '4': {
+                title: "👑 *Owner Menu* 👑",
+                content: `╭━━━〔 *Owner Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ ⚠️ *Restricted*
+┃★│ • block @user
+┃★│ • unblock @user
+┃★│ • fullpp [img]
+┃★│ • setpp [img]
+┃★│ • restart
+┃★│ • shutdown
+┃★│ • updatecmd
+┃★╰──────────────
+┃★╭──────────────
+┃★│ ℹ️ *Info Tools*
+┃★│ • gjid
+┃★│ • jid @user
+┃★│ • listcmd
+┃★│ • allmenu
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '5': {
+                title: "🤖 *AI Menu* 🤖",
+                content: `╭━━━〔 *AI Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 💬 *Chat AI*
+┃★│ • ai [query]
+┃★│ • gpt3 [query]
+┃★│ • gpt2 [query]
+┃★│ • gptmini [query]
+┃★│ • gpt [query]
+┃★│ • meta [query]
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🖼️ *Image AI*
+┃★│ • imagine [text]
+┃★│ • imagine2 [text]
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🔍 *Specialized*
+┃★│ • blackbox [query]
+┃★│ • luma [query]
+┃★│ • dj [query]
+┃★│ • khan [query]
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '6': {
+                title: "🎎 *Anime Menu* 🎎",
+                content: `╭━━━〔 *Anime Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 🖼️ *Images*
+┃★│ • fack
+┃★│ • dog
+┃★│ • awoo
+┃★│ • garl
+┃★│ • waifu
+┃★│ • neko
+┃★│ • megnumin
+┃★│ • maid
+┃★│ • loli
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🎭 *Characters*
+┃★│ • animegirl
+┃★│ • animegirl1-5
+┃★│ • anime1-5
+┃★│ • foxgirl
+┃★│ • naruto
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '7': {
+                title: "🔄 *Convert Menu* 🔄",
+                content: `╭━━━〔 *Convert Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 🖼️ *Media*
+┃★│ • sticker [img]
+┃★│ • sticker2 [img]
+┃★│ • emojimix 😎+😂
+┃★│ • take [name,text]
+┃★│ • tomp3 [video]
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 📝 *Text*
+┃★│ • fancy [text]
+┃★│ • tts [text]
+┃★│ • trt [text]
+┃★│ • base64 [text]
+┃★│ • unbase64 [text]
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '8': {
+                title: "📌 *Other Menu* 📌",
+                content: `╭━━━〔 *Other Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ 🕒 *Utilities*
+┃★│ • timenow
+┃★│ • date
+┃★│ • count [num]
+┃★│ • calculate [expr]
+┃★│ • countx
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🎲 *Random*
+┃★│ • flip
+┃★│ • coinflip
+┃★│ • rcolor
+┃★│ • roll
+┃★│ • fact
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🔍 *Search*
+┃★│ • define [word]
+┃★│ • news [query]
+┃★│ • movie [name]
+┃★│ • weather [loc]
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '9': {
+                title: "💞 *Reactions Menu* 💞",
+                content: `╭━━━〔 *Reactions Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ ❤️ *Affection*
+┃★│ • cuddle @user
+┃★│ • hug @user
+┃★│ • kiss @user
+┃★│ • lick @user
+┃★│ • pat @user
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 😂 *Funny*
+┃★│ • bully @user
+┃★│ • bonk @user
+┃★│ • yeet @user
+┃★│ • slap @user
+┃★│ • kill @user
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 😊 *Expressions*
+┃★│ • blush @user
+┃★│ • smile @user
+┃★│ • happy @user
+┃★│ • wink @user
+┃★│ • poke @user
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            },
+            '10': {
+                title: "🏠 *Main Menu* 🏠",
+                content: `╭━━━〔 *Main Menu* 〕━━━┈⊷
+┃★╭──────────────
+┃★│ ℹ️ *Bot Info*
+┃★│ • ping
+┃★│ • live
+┃★│ • alive
+┃★│ • runtime
+┃★│ • uptime
+┃★│ • repo
+┃★│ • owner
+┃★╰──────────────
+┃★╭──────────────
+┃★│ 🛠️ *Controls*
+┃★│ • menu
+┃★│ • menu2
+┃★│ • restart
+┃★╰──────────────
+╰━━━━━━━━━━━━━━━┈⊷
+> ${config.DESCRIPTION}`,
+                image: true
+            }
+        };
+
+        // Message handler with improved error handling
+        const handler = async (msgData) => {
+            try {
+                const receivedMsg = msgData.messages[0];
+                if (!receivedMsg?.message || !receivedMsg.key?.remoteJid) return;
+
+                const isReplyToMenu = receivedMsg.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+                
+                if (isReplyToMenu) {
+                    const receivedText = receivedMsg.message.conversation || 
+                                      receivedMsg.message.extendedTextMessage?.text;
+                    const senderID = receivedMsg.key.remoteJid;
+
+                    if (menuData[receivedText]) {
+                        const selectedMenu = menuData[receivedText];
+                        
+                        try {
+                            if (selectedMenu.image) {
+                                await conn.sendMessage(
+                                    senderID,
+                                    {
+                                        image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/xla7at.jpg' },
+                                        caption: selectedMenu.content,
+                                        contextInfo: contextInfo
+                                    },
+                                    { quoted: receivedMsg }
+                                );
+                            } else {
+                                await conn.sendMessage(
+                                    senderID,
+                                    { text: selectedMenu.content, contextInfo: contextInfo },
+                                    { quoted: receivedMsg }
+                                );
+                            }
+
+                            await conn.sendMessage(senderID, {
+                                react: { text: '✅', key: receivedMsg.key }
+                            });
+
+                        } catch (e) {
+                            console.log('Menu reply error:', e);
+                            await conn.sendMessage(
+                                senderID,
+                                { text: selectedMenu.content, contextInfo: contextInfo },
+                                { quoted: receivedMsg }
+                            );
+                        }
+
+                    } else {
+                        await conn.sendMessage(
+                            senderID,
+                            {
+                                text: `❌ *Invalid Option!* ❌\n\nPlease reply with a number between 1-10 to select a menu.\n\n*Example:* Reply with "1" for Download Menu\n\n> ${config.DESCRIPTION}`,
+                                contextInfo: contextInfo
+                            },
+                            { quoted: receivedMsg }
+                        );
+                    }
+                }
+            } catch (e) {
+                console.log('Handler error:', e);
+            }
+        };
+
+        // Add listener
+        conn.ev.on("messages.upsert", handler);
+
+        // Remove listener after 5 minutes
+        setTimeout(() => {
+            conn.ev.off("messages.upsert", handler);
+        }, 300000);
+
+    } catch (e) {
+        console.error('Menu Error:', e);
+        try {
+            await conn.sendMessage(
+                from,
+                { text: `❌ Menu system is currently busy. Please try again later.\n\n> ${config.DESCRIPTION}` },
+                { quoted: mek }
+            );
+        } catch (finalError) {
+            console.log('Final error handling failed:', finalError);
+        }
+    }
+});
+    
