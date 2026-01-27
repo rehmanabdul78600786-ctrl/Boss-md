@@ -1,262 +1,241 @@
 const { cmd } = require('../command');
 const config = require('../config');
 
-// ✅ YOUR PERSONAL PICTURE URL (Yahaan apni pic ka URL daalo)
-const YOUR_PIC_URL = "https://files.catbox.moe/w6d16s.jpg"; // imgbb.com se upload karo
+// 🎨 YOUR KILLER PROFILE PIC
+const YOUR_PIC = "https://files.catbox.moe/28y8ok.jpg"; // 🔥 APNI PIC KA URL
 
 cmd({
     pattern: "menu",
-    desc: "BOSS-MD Exclusive Ultra Menu",
+    desc: "BOSS-MD  DESIGN MENU",
     category: "menu",
-    react: "🔥",
+    react: "⚡",
     filename: __filename
 }, async (conn, mek, m, { from, reply, pushName }) => {
     try {
-        const userName = pushName || "BOSS";
-        const date = new Date().toLocaleDateString('en-IN', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        const time = new Date().toLocaleTimeString('en-IN');
+        const user = pushName || "VIP User";
+        const date = new Date();
+        
+        // 🎨 KILLER DESIGN MENU
+        const killerMenu = `
+▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+█                                   █
+█        ⚡ 𝗕𝗢𝗦𝗦-𝗠𝗗   ⚡       █
+█                                   █
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
 
-        // 🔥 ULTRA EXCLUSIVE MENU DESIGN
-        const ultraMenu = `
-◤━━━━━━━━━━━━━━━━━━◥
-         𝗕𝗢𝗦𝗦-𝗠𝗗 𝗩𝗜𝗣
-◣━━━━━━━━━━━━━━━━━━◢
+╔══════════ ✦ 𝗨𝗦𝗘𝗥 𝗜𝗡𝗙𝗢 ✦ ══════════╗
+║                                       ║
+║  👑 𝗢𝗪𝗡𝗘𝗥 : ${config.OWNER_NAME || "BOSS-MD"}   ║
+║  👤 𝗨𝗦𝗘𝗥 : ${user}                  ║
+║  📅 𝗗𝗔𝗧𝗘 : ${date.toLocaleDateString()} ║
+║  ⏰ 𝗧𝗜𝗠𝗘 : ${date.toLocaleTimeString()}   ║
+║                                       ║
+╚═══════════════════════════════════════╝
 
-╭───⊷ *👑 OWNER* ⊶───╮
-│ • ${config.OWNER_NAME || "BOSS-MD"}
-│ • Exclusive Edition
-│ • Version: Ultra Pro Max
-╰─────────────────╯
+┌─✦ 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗 𝗠𝗔𝗦𝗧𝗘𝗥 ✦─┐
+│ • .song   [name]  🎵  │
+│ • .video  [name]  🎬  │
+│ • .drama  [name]  📺  │
+│ • .fb     [url]   📱  │
+│ • .tiktok [url]   💃  │
+└─────────────────────┘
 
-╭───⊷ *👤 USER* ⊶───╮
-│ • Name: ${userName}
-│ • Status: ✅ Verified
-│ • Access: VIP Level
-╰─────────────────╯
+┌─✦ 𝗚𝗥𝗢𝗨𝗣 𝗕𝗢𝗦𝗦 ✦─┐
+│ • .add    @user   ➕  │
+│ • .kick   @user   🚫  │
+│ • .promote @user  ⬆️  │
+│ • .demote  @user  ⬇️  │
+│ • .tagall         🏷️  │
+└───────────────────┘
 
-╭───⊷ *📅 SESSION* ⊶───╮
-│ • Date: ${date}
-│ • Time: ${time}
-│ • Server: Active
-╰─────────────────╯
+┌─✦ 𝗔𝗜 𝗪𝗜𝗭𝗔𝗥𝗗 ✦─┐
+│ • .ai     [query] 🧠 │
+│ • .gpt    [query] 🤖 │
+│ • .bard   [query] 🔍 │
+│ • .image  [text]  🖼️ │
+│ • .blackbox [q]   📦 │
+└───────────────────┘
 
-🎪 *━━━━━ 𝗠𝗔𝗜𝗡 𝗠𝗘𝗡𝗨 ━━━━━*
+┌─✦ 𝗙𝗨𝗡 𝗭𝗢𝗡𝗘 ✦─┐
+│ • .joke         😂 │
+│ • .meme         🤣 │
+│ • .quote        💬 │
+│ • .ship @user   💘 │
+│ • .hack @user   👾 │
+└───────────────────┘
 
-┌─ *🎵 MEDIA DOWNLOAD*
-│ • .song [name] - High Quality MP3
-│ • .video [name] - HD Video
-│ • .drama [name] - Drama Series
-│ • .fb [url] - Facebook Video
-│ • .tiktok [url] - TikTok Download
-└─────────────────
+┌─✦ 𝗥𝗘𝗔𝗖𝗧𝗜𝗢𝗡𝗦 ✦─┐
+│ • .love  @user  ❤️ │
+│ • .hug   @user  🤗 │
+│ • .kiss  @user  💋 │
+│ • .slap  @user  👋 │
+│ • .pat   @user  👏 │
+└───────────────────┘
 
-┌─ *👥 GROUP POWER*
-│ • .add @user - Add Member
-│ • .kick @user - Remove Member  
-│ • .promote @user - Make Admin
-│ • .demote @user - Remove Admin
-│ • .tagall - Mention Everyone
-└─────────────────
+┌─✦ 𝗧𝗢𝗢𝗟𝗦 ✦─┐
+│ • .sticker  🏷️ │
+│ • .tts      🔊 │
+│ • .fancy    ✨ │
+│ • .weather  🌤️ │
+│ • .calc     🧮 │
+└───────────────┘
 
-┌─ *🤖 AI & CHATBOTS*
-│ • .ai [query] - AI Assistant
-│ • .gpt [query] - ChatGPT
-│ • .bard [query] - Google Bard
-│ • .image [text] - AI Image
-│ • .blackbox [query] - Blackbox AI
-└─────────────────
+╔════════ ✦ 𝗤𝗨𝗜𝗖𝗞 𝗔𝗖𝗖𝗘𝗦𝗦 ✦ ════════╗
+║ • .menu2    - Category Menu         ║
+║ • .owner    - Contact Owner         ║
+║ • .ping     - Speed Test            ║
+║ • .runtime  - Bot Uptime            ║
+║ • .listcmd  - All Commands          ║
+╚═════════════════════════════════════╝
 
-┌─ *😄 FUN & GAMES*
-│ • .joke - Random Jokes
-│ • .meme - Fresh Memes
-│ • .quote - Motivational
-│ • .ship @user - Ship Generator
-│ • .hack @user - Fake Hack
-└─────────────────
+▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+█  💎 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 : 𝗕𝗢𝗦𝗦-𝗠𝗗 𝗞𝗜𝗟𝗟𝗘𝗥  █
+▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀`;
 
-┌─ *🎭 REACTIONS*
-│ • .love @user - Send Love
-│ • .hug @user - Virtual Hug
-│ • .kiss @user - Send Kiss
-│ • .slap @user - Virtual Slap
-│ • .pat @user - Head Pat
-└─────────────────
-
-┌─ *🔧 UTILITIES*
-│ • .sticker [image] - Create Sticker
-│ • .tts [text] - Text to Speech
-│ • .fancy [text] - Fancy Text
-│ • .weather [city] - Weather Info
-│ • .calc [expression] - Calculator
-└─────────────────
-
-╭───⊷ *⚡ QUICK CMDS* ⊶───╮
-│ • .menu2 - Category Menu
-│ • .owner - Contact Owner
-│ • .ping - Speed Test
-│ • .runtime - Bot Uptime
-│ • .listcmd - All Commands
-╰─────────────────╯
-
-╭───⊷ *🌟 FEATURES* ⊶───╮
-│ ✓ 150+ Commands
-│ ✓ 24/7 Active
-│ ✓ Multi-Device
-│ ✓ No Lag
-│ ✓ VIP Support
-╰─────────────────╯
-
-◤━━━━━━━━━━━━━━━━━━◥
-   💎 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗕𝗢𝗦𝗦-𝗠𝗗
-◣━━━━━━━━━━━━━━━━━━◢`;
-
-        // 🔥 SEND WITH YOUR PERSONAL PICTURE
+        // 🔥 SEND KILLER DESIGN WITH YOUR PIC
         await conn.sendMessage(from, {
-            image: { url: YOUR_PIC_URL },
-            caption: ultraMenu,
+            image: { url: YOUR_PIC },
+            caption: killerMenu,
             contextInfo: {
                 externalAdReply: {
-                    title: "🔥 BOSS-MD ULTRA PRO MAX",
-                    body: `Welcome ${userName}! Exclusive Access`,
-                    thumbnailUrl: YOUR_PIC_URL,
+                    title: "⚡ BOSS-MD VIP EDITION",
+                    body: `Welcome ${user} • Exclusive Access`,
+                    thumbnailUrl: YOUR_PIC,
                     sourceUrl: "https://wa.me/" + (config.OWNER_NUMBER || ""),
                     mediaType: 1,
                     renderLargerThumbnail: true,
-                    showAdAttribution: false
+                    showAdAttribution: false,
+                    mediaUrl: YOUR_PIC
                 }
             }
         }, { quoted: mek });
 
-        // 🔥 INTERACTIVE BUTTONS
+        // 🎭 SEND INTERACTIVE LIST MESSAGE
         await conn.sendMessage(from, {
-            text: "🎛️ *BOSS-MD CONTROL PANEL*",
-            footer: "Select a category",
-            title: "VIP ACCESS MENU",
-            buttonText: "🚀 OPEN MENU",
+            text: "🎛️ *CONTROL PANEL*",
+            footer: "BOSS-MD VIP • Select Category",
+            title: "⚡ MAIN MENU",
+            buttonText: "📱 OPEN CATEGORIES",
             sections: [
                 {
-                    title: "🎪 MAIN CATEGORIES",
+                    title: "🔥 MAIN SECTIONS",
                     rows: [
-                        { title: "🎵 Media Download", rowId: "cat_media", description: "Songs, Videos, Drama" },
-                        { title: "👥 Group Tools", rowId: "cat_group", description: "Admin & Management" },
-                        { title: "🤖 AI Chatbots", rowId: "cat_ai", description: "AI & GPT Tools" },
-                        { title: "😄 Fun & Games", rowId: "cat_fun", description: "Entertainment" },
-                        { title: "🎭 Reactions", rowId: "cat_react", description: "Emoji Reactions" }
+                        { title: "🎵 MEDIA DOWNLOAD", rowId: "media", description: "Songs • Videos • Drama" },
+                        { title: "👥 GROUP TOOLS", rowId: "group", description: "Admin • Management" },
+                        { title: "🤖 AI CHATBOTS", rowId: "ai", description: "AI • GPT • Bard" },
+                        { title: "😄 FUN ZONE", rowId: "fun", description: "Games • Jokes • Memes" },
+                        { title: "🎭 REACTIONS", rowId: "react", description: "Love • Hug • Kiss" }
                     ]
                 },
                 {
-                    title: "🔧 TOOLS & UTILITIES",
+                    title: "🔧 UTILITIES",
                     rows: [
-                        { title: "🛠️ Utilities", rowId: "cat_tools", description: "Useful Tools" },
-                        { title: "🔍 Search", rowId: "cat_search", description: "Search Online" },
-                        { title: "📊 Stats", rowId: "cat_stats", description: "Bot Statistics" },
-                        { title: "👑 Owner", rowId: "cat_owner", description: "Owner Commands" },
-                        { title: "ℹ️ Help", rowId: "cat_help", description: "Get Help" }
+                        { title: "🛠️ TOOLS", rowId: "tools", description: "Sticker • TTS • Weather" },
+                        { title: "🔍 SEARCH", rowId: "search", description: "Web Search • Info" },
+                        { title: "📊 STATS", rowId: "stats", description: "Bot Statistics" },
+                        { title: "👑 OWNER", rowId: "owner", description: "Owner Commands" },
+                        { title: "❓ HELP", rowId: "help", description: "Help & Support" }
                     ]
                 }
             ]
         });
 
-        // 🔥 WELCOME MESSAGE
+        // ✨ WELCOME MESSAGE WITH STYLE
         await conn.sendMessage(from, {
-            text: `✨ *WELCOME TO BOSS-MD VIP!* ✨
-
-🎪 *Hello ${userName}!* 
-
-You've unlocked the *ULTIMATE* version of BOSS-MD with exclusive features:
-
-✅ *Personalized Experience*
-✅ *Ultra Fast Response*  
-✅ *Exclusive Commands*
-✅ *VIP Support*
-✅ *24/7 Active*
-
-📱 *Quick Start:*
-• Use .menu2 for categories
-• .ping to check speed
-• .owner for support
-
-🎯 *Tip:* All commands start with dot (.)
-
-💎 *Powered by BOSS-MD Exclusive*
-⏰ *Session:* ${date} ${time}
-
-_Enjoy the premium experience!_`
+            text: `▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+█                                 █
+█   ⚡ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗕𝗢𝗦𝗦-𝗠𝗗 𝗞𝗜𝗟𝗟𝗘𝗥  ⚡   █
+█                                 █
+█        👋 𝗛𝗘𝗟𝗟𝗢 ${user.toUpperCase()}!        █
+█                                 █
+█  🔥 𝗘𝗫𝗖𝗟𝗨𝗦𝗜𝗩𝗘 𝗙𝗘𝗔𝗧𝗨𝗥𝗘𝗦:          █
+█  • 500+ Powerful Commands       █
+█  • Ultra Fast Performance       █
+█  • VIP Design Interface      █
+█  • 24/7 Active Support          █
+█  • VIP User Experience          █
+█                                 █
+█  🎯 𝗤𝗨𝗜𝗖𝗞 𝗦𝗧𝗔𝗥𝗧:                   █
+█  • Use .menu2 for categories    █
+█  • .ping to check speed         █
+█  • .owner for support           █
+█                                 █
+█  💎 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗕𝗢𝗦𝗦-𝗠𝗗 𝗞𝗜𝗟𝗟𝗘𝗥    █
+█  ⏰ ${date.toLocaleDateString()} ${date.toLocaleTimeString()}     █
+▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀`
         });
 
     } catch (error) {
-        console.error("Ultra Menu Error:", error);
-        // Fallback simple menu
+        console.error("Killer Menu Error:", error);
+        // SIMPLE FALLBACK
         await conn.sendMessage(from, {
-            text: `🤖 *BOSS-MD ULTRA*\n\n👋 Hello ${pushName || "User"}!\n\n📥 *Download:* .song .video .drama\n👥 *Group:* .add .kick .promote\n🤖 *AI:* .ai .gpt .image\n😄 *Fun:* .joke .meme .quote\n🎭 *React:* .love .hug .kiss\n\n⚡ *Quick:* .menu2 .ping .owner`
+            text: `⚡ *BOSS-MD*\n\n👋 Hello ${pushName || "User"}!\n\n` +
+                  `🎵 *Media:* .song .video .drama\n` +
+                  `👥 *Group:* .add .kick .promote\n` +
+                  `🤖 *AI:* .ai .gpt .image\n` +
+                  `😄 *Fun:* .joke .meme .quote\n` +
+                  `🎭 *React:* .love .hug .kiss\n\n` +
+                  `⚡ *Quick:* .menu2 .ping .owner`
         }, { quoted: mek });
     }
 });
 
-// 🔥 CATEGORY MENU
+// 🎭 CATEGORY MENU
 cmd({
     pattern: "menu2",
-    desc: "Category-based menu system",
+    desc: "Killer Category Menu",
     category: "menu",
-    react: "📂",
+    react: "🎪",
     filename: __filename
-}, async (conn, mek, m, { from, reply, pushName }) => {
-    const YOUR_PIC_URL = "https://i.ibb.co/your-photo-code.jpg"; // Same pic
+}, async (conn, mek, m, { from, pushName }) => {
+    const YOUR_PIC = "https://i.ibb.co/your-photo-code.jpg";
     
-    const categories = `
-╔══════ ✦ 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗜𝗘𝗦 ✦ ══════╗
-║                                 ║
-║  🎪 *HELLO ${pushName || "BOSS"}!*   ║
-║  Select a category below:       ║
-║                                 ║
-╠═════════════════════════════════╣
-║                                 ║
-║  🎵 *MEDIA DOWNLOAD*           ║
-║  • .menu media                 ║
-║                                 ║
-║  👥 *GROUP TOOLS*              ║
-║  • .menu group                 ║  
-║                                 ║
-║  🤖 *AI & CHATBOTS*            ║
-║  • .menu ai                    ║
-║                                 ║
-║  😄 *FUN & GAMES*              ║
-║  • .menu fun                   ║
-║                                 ║
-║  🎭 *REACTIONS*                ║
-║  • .menu react                 ║
-║                                 ║
-║  🔧 *UTILITIES*                ║
-║  • .menu tools                 ║
-║                                 ║
-║  👑 *OWNER CMDS*               ║
-║  • .menu owner                 ║
-║                                 ║
-╚═════════════════════════════════╝
+    const catMenu = `
+▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+█                                 █
+█    🎪 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬 𝗠𝗘𝗡𝗨 🎪        █
+█                                 █
+█        👋 ${pushName || "BOSS"}          █
+█                                 █
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
 
-📌 *Usage:* .menu [category]
-🎯 *Example:* .menu media
+╔═══════ ✦ 𝗦𝗘𝗟𝗘𝗖𝗧 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬 ✦ ═══════╗
+║                                       ║
+║  🔥 𝗠𝗔𝗜𝗡 𝗦𝗘𝗖𝗧𝗜𝗢𝗡𝗦:                 ║
+║                                       ║
+║  🎵 *Media Download*                 ║
+║  • .menu media                       ║
+║                                       ║
+║  👥 *Group Tools*                    ║
+║  • .menu group                       ║  
+║                                       ║
+║  🤖 *AI Chatbots*                    ║
+║  • .menu ai                          ║
+║                                       ║
+║  😄 *Fun Zone*                       ║
+║  • .menu fun                         ║
+║                                       ║
+║  🎭 *Reactions*                      ║
+║  • .menu react                       ║
+║                                       ║
+║  🔧 *Utilities*                      ║
+║  • .menu tools                       ║
+║                                       ║
+║  👑 *Owner Commands*                 ║
+║  • .menu owner                       ║
+║                                       ║
+╚═══════════════════════════════════════╝
 
-💎 *BOSS-MD VIP EDITION*`;
+▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+█  📌 Usage: .menu [category]       █
+█  🎯 Example: .menu media           █
+█  💎 BOSS-MD KILLER EDITION         █
+▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀`;
 
     await conn.sendMessage(from, {
-        image: { url: YOUR_PIC_URL },
-        caption: categories,
-        contextInfo: {
-            externalAdReply: {
-                title: "📱 BOSS-MD CATEGORIES",
-                body: "Select your category",
-                thumbnailUrl: YOUR_PIC_URL,
-                sourceUrl: "https://github.com/boss-md",
-                mediaType: 1
-            }
-        }
+        image: { url: YOUR_PIC },
+        caption: catMenu
     }, { quoted: mek });
 });
 
-console.log("🔥 BOSS-MD ULTRA MENU LOADED!");
+console.log("⚡ BOSS-MD KILLER MENU LOADED!");
