@@ -123,26 +123,16 @@ ${config.OWNER_NAME}
             console.log("Buttons not supported");
         }
 
-        // 5. فائنل میسج
-        await conn.sendMessage(
-            from,
-            {
-                text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
-            },
-            { quoted: mek }
-        );
+// آپ کا فائنل میسج
+await conn.sendMessage(
+    from,
+    {
+        text: `🎉 *VIP MENU DELIVERED!*\n\n✅ Voice Message Sent\n✅ Premium Image Sent\n✅ Interactive Menu Ready\n\nType *${prefix}help* for more options!\n\n${config.DESCRIPTION}`
+    },
+    { quoted: mek }
+);
 
-    } catch (error) {
-        console.error('Menu error:', error);
-        await conn.sendMessage(
-            from,
-            { text: `❌ Menu Error\n\n${error.message}\n\nPlease try again!` },
-            { quoted: mek }
-        );
-    }
-});
-
-// انٹرایکٹو مینو سسٹم (برقرار رکھیں)
+// ============ یہاں menuData کو اندر منتقل کریں ============
 const menuData = {
     '1': {
         title: "📥 *DOWNLOAD MENU* 📥",
@@ -167,6 +157,15 @@ const menuData = {
 • ${prefix}mediafire [url]
 
 > VIP Download Tools Activated!`
+    },
+    // باقی menuData...
+};
+// ============ یہاں تک ============
+
+} catch (error) {
+    console.error('Menu error:', error);
+    // ...
+    }
     },  // ✅ یہاں `,` لگائیں
     '2': {  // ✅ '2': key بھی لگائیں
         title: "👥 *Group Menu* 👥",
