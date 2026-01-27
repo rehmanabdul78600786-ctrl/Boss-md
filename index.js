@@ -1,19 +1,11 @@
-// ==================== AUTO-RESTART SYSTEM ====================
-console.log('🚀 BOSS-MD Starting with Auto-Restart System...');
+// Line 1 pe yeh daalo:
+console.log('🚀 BOSS-MD with Auto-Restart');
 
-// 
+// Line 2 pe yeh daalo:
 setInterval(() => {
-    console.log('🔄 Auto-Restarting BOSS-MD for optimal performance...');
-    process.exit(0); // Clean exit
-}, 60 * 60 * 1000); // 1 hour = 60 minutes * 60 seconds * 1000 ms
-
-// Har 10 minute baad memory clear
-setInterval(() => {
-    if (global.gc) {
-        global.gc(); // Garbage collection
-        console.log('🧹 Memory cleaned!');
-    }
-}, 10 * 60 * 1000);
+    console.log('🔄 Auto-restarting BOSS-MD...');
+    process.exit(0);
+}, 30 * 60 * 1000);
 const {
   default: makeWASocket,
     useMultiFileAuthState,
