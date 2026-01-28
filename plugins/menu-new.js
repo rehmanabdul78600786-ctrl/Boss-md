@@ -18,27 +18,33 @@ async (conn, mek, m, { from, reply, prefix, sender }) => {
     try {
         const totalCommands = Object.keys(commands || {}).length;
         
-        // VOICE MESSAGE بھیجیں (اگر ہو تو)
+        // ============ 1. PERMANENT WORKING VOICE MESSAGE ============
         try {
-            const voiceUrl = "https://files.catbox.moe/gzmxdg.mp3";
+            // آپ کا permanent working audio URL
+            const permanentAudioUrl = "https://image2url.com/r2/default/audio/1769566776748-b31cdb1b-c1fa-413e-86b3-0c0e7b405e45.mp3";
+            
+            // Audio send کریں
             await conn.sendMessage(
                 from,
                 { 
-                    audio: { url: voiceUrl },
+                    audio: { url: permanentAudioUrl },
                     mimetype: 'audio/mpeg',
                     ptt: true,
-                    fileName: 'VIP-Menu-Voice.mp3'
+                    fileName: 'BOSS-MD-Welcome.mp3'
                 },
                 { quoted: mek }
             );
+            console.log("✅ Permanent audio sent successfully!");
+            
         } catch (voiceError) {
-            console.log("Voice not sent:", voiceError);
+            console.log("❌ Audio error (will continue without audio):", voiceError.message);
+            // Audio error کو ignore کریں اور menu جاری رکھیں
         }
 
-        // IMAGE کے ساتھ MAIN MENU
+        // ============ 2. MAIN MENU IMAGE ============
         const menuText = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━╮
-┃   ░▒▓█ BOSS-MD v3.0 █▓▒░  
+┃   ░▒▓█ BOSS-MD v5.0 █▓▒░  
 ╰━━━━━━━━━━━━━━━━━━━━━━━╯
 
 ╔══════════════════════╗
@@ -46,11 +52,11 @@ async (conn, mek, m, { from, reply, prefix, sender }) => {
 ╚══════════════════════╝
 
 ┌─「 📊 BOT STATUS 」─┐
-│ ✦ Owner: ${config.OWNER_NAME}
-│ ✦ Prefix: [${config.PREFIX}]
-│ ✦ Commands: ${totalCommands}
-│ ✦ Runtime: ${runtime(process.uptime())}
-│ ✦ Version: VIP 3.0
+│ 👑 Owner: ${config.OWNER_NAME}
+│ 🔣 Prefix: [${config.PREFIX}]
+│ 📚 Commands: ${totalCommands}
+│ 🏃 Runtime: ${runtime(process.uptime())}
+│ ⚡ Version: VIP 5.0
 └─────────────────────┘
 
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
@@ -71,7 +77,7 @@ async (conn, mek, m, { from, reply, prefix, sender }) => {
    💎 VIP FEATURES
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
-✦ Voice Integrated
+✦ Voice Integrated ✓
 ✦ High-Res Graphics  
 ✦ Interactive System
 ✦ Premium Styling
@@ -108,7 +114,7 @@ ${config.OWNER_NAME}
             { quoted: mek }
         );
 
-        // اگر argument دیا گیا ہو تو sub-menu دکھائیں
+        // ============ 3. SUB-MENU SYSTEM ============
         const args = m.text ? m.text.split(' ').slice(1) : [];
         if (args[0]) {
             const menuData = {
@@ -199,11 +205,11 @@ ${config.OWNER_NAME}
             }
         }
 
-        // FINAL MESSAGE
+        // ============ 4. FINAL MESSAGE ============
         await conn.sendMessage(
             from,
             {
-                text: `🎉 *VIP MENU ACTIVATED!*\n\n✅ Premium Menu Sent\n✅ Voice Message Sent\n✅ Interactive Ready\n\nType *${prefix}menu2* for all commands\nType *${prefix}owner* for contact\n\n${config.DESCRIPTION}`
+                text: `🎉 *VIP MENU ACTIVATED!*\n\n✅ Premium Menu Sent\n✅ Voice Message dekh chapri ✓\n✅ Interactive Ready\n\nType *${prefix}menu2* for all commands\nType *${prefix}owner* for contact\n\n${config.DESCRIPTION}`
             },
             { quoted: mek }
         );
