@@ -237,8 +237,50 @@ const port = process.env.PORT || 9090;
   const botNumber2 = await jidNormalizedUser(conn.user.id);
   const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
   const groupName = isGroup && groupMetadata?.subject ? groupMetadata.subject : ''
-  const participants = isGroup ? await conn.groupMetadata(from).then(m => m.participants || []).catch(e => []) : []
-  const groupAdmins = isGroup ? await getGroupAdmins(participants) : []
+  // 🟢 YEH NAYA CODE PASTE KAR DEIN (Line 240 aur 241 ki jagah)
+let participants = [];
+let groupAdmins = [];
+
+if (isGroup) {
+    // Group metadata cache ka object banayein
+    if (!global.groupDataCache) global.groupDataCache = {};
+
+    try {
+        // Pehle cache check karein (5 minute purana data nahi use karein)
+        const cacheKey = from;
+        if (global.groupDataCache[cacheKey] && (Date.now() - global.groupDataCache[cacheKey].timestamp) < 5 * 60 * 1000) {
+            // Cache se data uthayein
+            participants = global.groupDataCache[cacheKey].participants || [];
+        } else {
+            // Naya data fetch karein
+            console.log(`🔄 Fetching fresh group metadata for: ${from}`);
+            const metadata = await conn.groupMetadata(from);
+            participants = metadata.participants || [];
+            
+            // Cache mein save karein
+            global.groupDataCache[cacheKey] = {
+                participants: participants,
+                timestamp: Date.now()
+            };
+        }
+
+        // Admins list banayein
+        groupAdmins = participants.filter(p => p.admin).map(p => p.id);
+
+    } catch (error) {
+        console.log('❌ Group metadata error:', error.message);
+        // Error mein bhi cache save karein takai dobara try na karein
+        if (!global.groupDataCache[from]) {
+            global.groupDataCache[from] = {
+                participants: [],
+                timestamp: Date.now()
+            };
+        }
+        participants = [];
+        groupAdmins = [];
+    }
+}
+// 🟢 YAHAN TAK NAYA CODE
   const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
   const isAdmins = isGroup ? groupAdmins.includes(sender) : false
   const isReact = m.message.reactionMessage ? true : false
