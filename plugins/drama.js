@@ -40,15 +40,16 @@ async function getVideoDownloadUrl(youtubeUrl, videoId) {
 
             if (response.data) {
 
-                // ✅ Arslan API format
+                // 🔹 Arslan API FIX
                 if (response.data.status && response.data.data?.download) {
+                    const dl = response.data.data.download;
                     return {
-                        download: response.data.data.download,
+                        download: typeof dl === "string" ? dl : dl.url,
                         title: response.data.data.title || "Video"
                     };
                 }
 
-                // Existing formats
+                // 🔹 Existing formats (unchanged)
                 if (response.data.download && response.data.download.includes('.mp4')) {
                     return { 
                         download: response.data.download,
@@ -63,7 +64,7 @@ async function getVideoDownloadUrl(youtubeUrl, videoId) {
                     };
                 }
 
-                if (response.data.links && response.data.links[0] && response.data.links[0].url) {
+                if (response.data.links && response.data.links[0]?.url) {
                     return { 
                         download: response.data.links[0].url,
                         title: response.data.title || "Video"
@@ -100,6 +101,7 @@ cmd({
         let videoUrl = "";
         let videoInfo = {};
 
+        // Send processing message
         await sock.sendMessage(message.chat, { 
             text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🔍 *Searching for video...*\n│ 📝 *Query:* ${query}\n└─────────────` 
         }, { quoted: message });
@@ -118,6 +120,7 @@ cmd({
             }
             videoInfo = videos[0];
             videoUrl = videoInfo.url;
+            videoInfo.videoId = videoInfo.videoId;
         }
 
         if (!videoInfo.videoId) {
@@ -151,7 +154,7 @@ cmd({
         }, { quoted: message });
 
     } catch (error) {
-        console.error('[DRAMA CMD ERROR]', error);
+        console.error('[DRAMA CMD ERROR]', error?.message || error);
         await sock.sendMessage(message.chat, { 
             text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download failed!*\n│ 💡 Error: ${error?.message || 'Unknown error'}\n└─────────────` 
         }, { quoted: message });
