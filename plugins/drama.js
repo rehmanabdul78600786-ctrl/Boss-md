@@ -23,34 +23,46 @@ const VIDEO_APIS = [
     {
         name: "API 3",
         getUrl: (videoId) => `https://yt-api.p.riteshw.workers.dev/dl?id=${videoId}`
+    },
+    {
+        name: "API 4 (Arslan)",
+        getUrl: (videoId, youtubeUrl) => `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(youtubeUrl)}`
     }
 ];
 
 async function getVideoDownloadUrl(youtubeUrl, videoId) {
     for (let api of VIDEO_APIS) {
         try {
-            const apiUrl = api.getUrl(videoId);
+            const apiUrl = api.getUrl(videoId, youtubeUrl);
             console.log(`Trying ${api.name}: ${apiUrl}`);
-            
+
             const response = await axios.get(apiUrl, AXIOS_DEFAULTS);
-            
-            // Check different response formats
+
             if (response.data) {
-                // Format 1: Direct download link
+
+                // ✅ Arslan API format
+                if (response.data.status && response.data.data?.download) {
+                    return {
+                        download: response.data.data.download,
+                        title: response.data.data.title || "Video"
+                    };
+                }
+
+                // Existing formats
                 if (response.data.download && response.data.download.includes('.mp4')) {
                     return { 
                         download: response.data.download,
                         title: response.data.title || "Video"
                     };
                 }
-                // Format 2: Nested result
+
                 if (response.data.result && response.data.result.download) {
                     return { 
                         download: response.data.result.download,
                         title: response.data.result.title || "Video"
                     };
                 }
-                // Format 3: Links array
+
                 if (response.data.links && response.data.links[0] && response.data.links[0].url) {
                     return { 
                         download: response.data.links[0].url,
@@ -88,14 +100,12 @@ cmd({
         let videoUrl = "";
         let videoInfo = {};
 
-        // Send processing message
         await sock.sendMessage(message.chat, { 
             text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🔍 *Searching for video...*\n│ 📝 *Query:* ${query}\n└─────────────` 
         }, { quoted: message });
 
         if (query.startsWith('http://') || query.startsWith('https://')) {
             videoUrl = query;
-            // Extract video ID from URL
             const urlMatch = query.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
             videoInfo.videoId = urlMatch ? urlMatch[1] : null;
         } else {
@@ -108,7 +118,6 @@ cmd({
             }
             videoInfo = videos[0];
             videoUrl = videoInfo.url;
-            videoInfo.videoId = videoInfo.videoId;
         }
 
         if (!videoInfo.videoId) {
@@ -124,30 +133,17 @@ cmd({
         const duration = videoInfo.timestamp || "Unknown";
         const thumb = videoInfo.thumbnail;
 
-        // 📸 Send info with stylish caption
         await sock.sendMessage(message.chat, {
             image: { url: thumb },
             caption: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🎬 *${title}*\n│ ⏱ *Duration:* ${duration}\n│ 👁 *Views:* ${views}\n│ 👤 *Channel:* ${author}\n│ 📥 *Finding download link...*\n└─────────────\n\n*© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ꧁𓊈𒆜 𝑩𝒐𝒔𝒔-𝒎𝒅 𒆜𓊉꧂*`
         }, { quoted: message });
 
-        // 🌀 Get download URL using new APIs
-        let videoData;
-        try {
-            videoData = await getVideoDownloadUrl(videoUrl, videoInfo.videoId);
-        } catch (error) {
-            console.error('Download API error:', error);
-            await sock.sendMessage(message.chat, { 
-                text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download service temporary unavailable*\n│ 💡 Please try again later\n└─────────────` 
-            }, { quoted: message });
-            return;
-        }
+        const videoData = await getVideoDownloadUrl(videoUrl, videoInfo.videoId);
 
-        // 📁 Send as document with stylish processing message
         await sock.sendMessage(message.chat, { 
             text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ✅ *Video Found!*\n│ 🎬 *Title:* ${videoData.title || title}\n│ 📦 *Sending as document...*\n└─────────────` 
         }, { quoted: message });
 
-        // Send the video document
         await sock.sendMessage(message.chat, {
             document: { url: videoData.download },
             mimetype: 'video/mp4',
@@ -155,7 +151,7 @@ cmd({
         }, { quoted: message });
 
     } catch (error) {
-        console.error('[DRAMA CMD ERROR]', error?.message || error);
+        console.error('[DRAMA CMD ERROR]', error);
         await sock.sendMessage(message.chat, { 
             text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download failed!*\n│ 💡 Error: ${error?.message || 'Unknown error'}\n└─────────────` 
         }, { quoted: message });
