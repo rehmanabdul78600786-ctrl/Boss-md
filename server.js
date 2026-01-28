@@ -1,3 +1,19 @@
+// server.js updated section
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const morgan = require('morgan');
+require('dotenv').config();
+
+const app = express();
+
+// Security middleware
+app.use(helmet());
+app.use(cors());
+app.use(morgan('combined'));
+app.use(express.json());
+
+// Rest of your server.js code...
 const express = require('express');
 const path = require('path');
 require('dotenv').config();
