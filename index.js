@@ -207,7 +207,16 @@ const port = process.env.PORT || 9090;
             await Promise.all([
               saveMessage(mek),
             ]);
-  const m = sms(conn, mek)
+  let m;
+try {
+  m = sms(conn, mek);
+} catch (error) {
+  console.log('SMS Error:', error.message);
+  m = {
+    reply: (t) => conn.sendMessage(mek.key.remoteJid, { text: t }, { quoted: mek }),
+    react: (e) => conn.sendMessage(mek.key.remoteJid, { react: { text: e, key: mek.key } })
+  };
+}
   const type = getContentType(mek.message)
   const content = JSON.stringify(mek.message)
   const from = mek.key.remoteJid
