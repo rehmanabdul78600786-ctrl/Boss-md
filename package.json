@@ -4,7 +4,7 @@
   "description": "A WhatsApp Bot Created By BOSS-MD",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start index.js --deep-monitoring --attach --name BOSS-MD",
+    "start": "pm2 start server.js && pm2 start index.js --deep-monitoring --attach --name BOSS-MD",
     "stop": "pm2 stop BOSS-MD",
     "restart": "pm2 restart BOSS-MD"
   },
