@@ -273,10 +273,8 @@ if (isGroup) {
 }
 
 //const groupName = isGroup ? (global.groupCache && global.groupCache[from] ? global.groupCache[from].subject : 'Group Chat') : 'Private Chat';
-//const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
+const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
 const isAdmins = isGroup ? groupAdmins.includes(sender) : false;
-  const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
-  const isAdmins = isGroup ? groupAdmins.includes(sender) : false
   const isReact = m.message.reactionMessage ? true : false
   const reply = (teks) => {
   conn.sendMessage(from, { text: teks }, { quoted: mek })
