@@ -1,3 +1,62 @@
+// ✅ Auto-reconnect function
+const startBot = async () => {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState('session');
+        
+        const sock = makeWASocket({
+            printQRInTerminal: true,
+            auth: state,
+            logger: P({ level: 'warn' }),
+            connectTimeoutMs: 60000,
+            keepAliveIntervalMs: 10000,
+            browser: ['Ubuntu', 'Chrome', '20.0.04'],
+            markOnlineOnConnect: true,
+            syncFullHistory: false,
+            retryRequestDelayMs: 250,
+            maxRetries: 10,
+            // Important: Auto-reconnect settings
+            reconnect: true,
+            maxReconnectRetries: Infinity
+        });
+
+        sock.ev.on('creds.update', saveCreds);
+        
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect, qr } = update;
+            
+            if (qr) {
+                console.log('📱 QR Code ready for scanning');
+            }
+            
+            if (connection === 'close') {
+                const reason = lastDisconnect?.error?.output?.statusCode;
+                console.log(`🔌 Connection closed. Reason: ${reason}`);
+                
+                if (reason === 428 || reason === 401) {
+                    // Session expired - need new QR
+                    console.log('⚠️ Session expired. Please restart the bot.');
+                } else {
+                    // Auto reconnect after 5 seconds
+                    console.log('🔄 Attempting reconnect in 5 seconds...');
+                    setTimeout(startBot, 5000);
+                }
+            }
+            
+            if (connection === 'open') {
+                console.log('✅ Connected to WhatsApp successfully!');
+            }
+        });
+
+        return sock;
+        
+    } catch (error) {
+        console.log('❌ Error starting bot:', error);
+        setTimeout(startBot, 10000); // Retry after 10 seconds
+    }
+};
+
+// Bot start karo
+let conn = await startBot();
 const {
   default: makeWASocket,
     useMultiFileAuthState,
