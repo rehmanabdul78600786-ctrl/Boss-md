@@ -13,7 +13,7 @@ cmd({
     filename: __filename,
 },
 async (conn, mek, m, { from, reply }) => {
-    const githubRepoURL = 'https://github.com/rehmanabdul78600786-ctrl/boss-MD-786/';
+    const githubRepoURL = 'https://github.com/rehmanabdul78600786-ctr/boss-MD-78/';
 
     try {
         // Extract username and repo name from the URL
@@ -40,7 +40,7 @@ async (conn, mek, m, { from, reply }) => {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363405061777123@newsletter',
+                    newsletterJid: '120363422481806597@newsletter',
                     newsletterName: '𝘽𝙊𝙎𝙎-𝙈𝘿',
                     serverMessageId: 143
                 }
@@ -58,7 +58,7 @@ async (conn, mek, m, { from, reply }) => {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363405061777123@newsletter',
+                    newsletterJid: '120363422481806597@newsletter',
                     newsletterName: '𝘽𝙊𝙎𝙎-𝙈𝘿',
                     serverMessageId: 143
                 }
