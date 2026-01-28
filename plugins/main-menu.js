@@ -1,4 +1,4 @@
-íiconst config = require('../config')
+const config = require('../config')
 const { cmd, commands } = require('../command');
 const path = require('path'); 
 const os = require("os")
@@ -346,7 +346,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         await conn.sendMessage(
             from,
             {
-                image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/7mk4ph.jpg' },
+                image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/lcpy9f.jpg' },
                 caption: dec,
                 contextInfo: {
                     mentionedJid: [m.sender],
@@ -363,7 +363,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         );
 // share local audio 
 
-const audioPath = path.join(__dirname,'../assets/menu.m4a');
+const audioPath = path.join(__dirname, '../assets/menu.m4a');
 await conn.sendMessage(from, {
     audio: fs.readFileSync(audioPath),
     mimetype: 'audio/mp4',
