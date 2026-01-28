@@ -231,7 +231,7 @@ const port = process.env.PORT || 9090;
   const groupName = isGroup ? (groupMetadata?.subject || 'Group Chat') : 'Private Chat';
   // Yeh 2 lines (246-247) replace kar dein yeh se:
 
-//let participants = [];
+ let participants = [];
 let groupAdmins = [];
 
 // Group data sirf tab fetch karo jab zaroorat ho
@@ -272,8 +272,8 @@ if (isGroup) {
     groupAdmins = participants.filter(p => p.admin).map(p => p.id);
 }
 
-const groupName = isGroup ? (global.groupCache && global.groupCache[from] ? global.groupCache[from].subject : 'Group Chat') : 'Private Chat';
-const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
+//const groupName = isGroup ? (global.groupCache && global.groupCache[from] ? global.groupCache[from].subject : 'Group Chat') : 'Private Chat';
+//const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
 const isAdmins = isGroup ? groupAdmins.includes(sender) : false;
   const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
   const isAdmins = isGroup ? groupAdmins.includes(sender) : false
