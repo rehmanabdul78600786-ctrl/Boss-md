@@ -1,98 +1,48 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
-// Middleware for instant response
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Simple middleware
+app.use(express.json());
 
-// ========== ULTRA FAST HEALTH CHECK ==========
+// Health check - simple and fast
 app.get('/', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('X-Response-Time', '0ms');
-    res.status(200).json({
-        status: 'ONLINE',
+    res.json({
+        status: 'online',
         bot: 'BOSS-MD',
-        speed: 'ULTRA-FAST',
-        uptime: process.uptime(),
-        timestamp: Date.now(),
-        message: 'Bot is running at lightning speed ⚡'
+        uptime: process.uptime()
     });
 });
 
-// ========== INSTANT PING ENDPOINT ==========
+// Ping endpoint
 app.get('/ping', (req, res) => {
-    res.status(200).send('PONG');
+    res.send('pong');
 });
 
-// ========== HELLO MESSAGE ENDPOINT ==========
-app.get('/hello', (req, res) => {
-    res.status(200).json({
-        message: 'Hello from BOSS-MD Bot! 🚀',
-        developer: '𝘽𝙊𝙎𝙎-𝙈𝘿',
-        speed: 'Instant Reply',
-        tip: 'Bot never sleeps, always ready!'
-    });
-});
-
-// ========== BOT STATUS ==========
+// Status endpoint
 app.get('/status', (req, res) => {
-    res.status(200).json({
-        bot_status: 'ACTIVE',
-        response_time: '10-50ms',
-        memory_usage: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`,
-        platform: process.platform,
-        node_version: process.version
+    res.json({
+        status: 'running',
+        memory: (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2) + 'MB'
     });
 });
 
-// ========== ERROR HANDLING ==========
-app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint not found', available: ['/', '/ping', '/hello', '/status'] });
-});
-
-// ========== START SERVER WITH BOT ==========
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`⚡ BOSS-MD Server started on port ${PORT}`);
-    console.log(`⏱️  Startup Time: ${Date.now() - serverStartTime}ms`);
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
     
-    // Bot start with error handling
+    // Start bot after server
     setTimeout(() => {
         try {
-            console.log('🚀 Starting WhatsApp Bot...');
             require('./index');
-            console.log('✅ Bot initialized successfully');
-            
-            // Send startup notification
-            const startupTime = Date.now() - serverStartTime;
-            console.log(`🎯 Total Startup: ${startupTime}ms`);
-            
+            console.log('Bot started successfully');
         } catch (error) {
-            console.error('❌ Bot failed to start:', error.message);
-            // Auto-restart after 5 seconds
-            setTimeout(() => {
-                console.log('🔄 Attempting auto-restart...');
-                process.exit(1);
-            }, 5000);
+            console.log('Bot error:', error.message);
         }
-    }, 100); // 100ms delay for server to stabilize
+    }, 1000);
 });
 
-const serverStartTime = Date.now();
-
-// ========== GRACEFUL SHUTDOWN ==========
-process.on('SIGTERM', () => {
-    console.log('🛑 SIGTERM received, shutting down gracefully...');
-    server.close(() => {
-        console.log('✅ Server closed');
-        process.exit(0);
-    });
-});
-
-// ========== KEEP ALIVE MECHANISM ==========
+// Keep alive every 25 minutes
 setInterval(() => {
-    // Keep Heroku dyno alive
-    console.log('💓 Keep-alive ping');
-}, 20 * 60 * 1000); // Every 20 minutes
-
-console.log('🔧 Server configuration loaded');
+    console.log('Keep-alive');
+}, 25 * 60 * 1000);
