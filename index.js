@@ -271,10 +271,10 @@ try {
   conn.sendMessage(from, { text: teks }, { quoted: mek })
   }
   const udp = botNumber.split(`@`)[0]
-const boss = ['923076411099','923076411099'] 
+const BOSS = ['923076411099','923076411099'] 
 const dev = [] 
 
-let isCreator = [udp, ...Boss, ...dev]
+let isCreator = [udp, ...BOSS, ...dev]
     .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
     .includes(sender);
 
