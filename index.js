@@ -231,7 +231,7 @@ const port = process.env.PORT || 9090;
   const groupName = isGroup ? (groupMetadata?.subject || 'Group Chat') : 'Private Chat';
   // Yeh 2 lines (246-247) replace kar dein yeh se:
 
-let participants = [];
+//let participants = [];
 let groupAdmins = [];
 
 // Group data sirf tab fetch karo jab zaroorat ho
