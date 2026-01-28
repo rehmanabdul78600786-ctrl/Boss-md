@@ -363,7 +363,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         );
 // share local audio 
 
-const audioPath = path.join(__dirname, '../https://image2url.com/r2/default/audio/1769566776748-b31cdb1b-c1fa-413e-86b3-0c0e7b405e45.mp3);
+const audioPath = path.join(__dirname,'../assets/menu.m4a');
 await conn.sendMessage(from, {
     audio: fs.readFileSync(audioPath),
     mimetype: 'audio/mp3',
