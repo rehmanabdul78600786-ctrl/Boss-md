@@ -1,4 +1,4 @@
-iconst config = require('../config')
+íiconst config = require('../config')
 const { cmd, commands } = require('../command');
 const path = require('path'); 
 const os = require("os")
@@ -363,7 +363,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         );
 // share local audio 
 
-const audioPath = path.join(__dirname,'../assets/menu.m4a');
+const audioPath = path.join(__dirname, '../assets/menu.m4a');
 await conn.sendMessage(from, {
     audio: fs.readFileSync(audioPath),
     mimetype: 'audio/mp3',
