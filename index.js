@@ -229,8 +229,52 @@ const port = process.env.PORT || 9090;
   const botNumber2 = await jidNormalizedUser(conn.user.id);
   const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
   const groupName = isGroup ? (groupMetadata?.subject || 'Group Chat') : 'Private Chat';
-  const participants = isGroup ? await groupMetadata.participants : ''
-  const groupAdmins = isGroup ? await getGroupAdmins(participants) : ''
+  // Yeh 2 lines (246-247) replace kar dein yeh se:
+
+let participants = [];
+let groupAdmins = [];
+
+// Group data sirf tab fetch karo jab zaroorat ho
+if (isGroup) {
+    // Temporary cache ka system
+    if (!global.groupCache) global.groupCache = {};
+    
+    const now = Date.now();
+    const CACHE_TIME = 2 * 60 * 1000; // 2 minutes cache
+    
+    if (global.groupCache[from] && (now - global.groupCache[from].timestamp) < CACHE_TIME) {
+        // Cache se data lo
+        participants = global.groupCache[from].participants || [];
+    } else {
+        try {
+            // Naya data fetch karo
+            console.log(`🔄 Fetching fresh data for group: ${from.substring(0, 15)}...`);
+            const metadata = await conn.groupMetadata(from);
+            participants = metadata.participants || [];
+            
+            // Cache mein save karo
+            global.groupCache[from] = {
+                participants: participants,
+                timestamp: now
+            };
+        } catch (error) {
+            console.log(`❌ Group data error: ${error.message}`);
+            participants = [];
+            // Error bhi cache mein save karo
+            global.groupCache[from] = {
+                participants: [],
+                timestamp: now
+            };
+        }
+    }
+    
+    // Admins list banayo
+    groupAdmins = participants.filter(p => p.admin).map(p => p.id);
+}
+
+const groupName = isGroup ? (global.groupCache && global.groupCache[from] ? global.groupCache[from].subject : 'Group Chat') : 'Private Chat';
+const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
+const isAdmins = isGroup ? groupAdmins.includes(sender) : false;
   const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
   const isAdmins = isGroup ? groupAdmins.includes(sender) : false
   const isReact = m.message.reactionMessage ? true : false
