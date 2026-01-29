@@ -68,7 +68,7 @@ function getRandomBotName() {
 
 // ORIGINAL PING COMMAND (Your ping2 renamed as ping)
 cmd({
-    pattern: "ping",
+    pattern: "ping2",
     alias: ["speed", "pong", "test", "ping2"], // ADDED ping2 as alias
     desc: "Check bot's response time with fancy design.",
     category: "main",
@@ -281,7 +281,7 @@ ${theme.corner[2]}${theme.border.repeat(30)}${theme.corner[3]}
 
 // VIDEO PING COMMAND - Your original ping2 with video
 cmd({
-    pattern: "ping2",
+    pattern: "ping",
     alias: ["videoping", "vp", "vidping"], // Your original ping2 command
     use: '.ping',
     desc: "Video ping with fancy design.",
@@ -342,7 +342,7 @@ async (conn, mek, m, { from, quoted, sender, reply, pushname }) => {
         // Create detailed ping message
         const text = `
 ╔════════════════════════════════╗
-║        🎬 *VIDEO PING 2.0*       ║
+║        🎬 *VIDEO PING 1.0*       ║
 ╚════════════════════════════════╝
 
 🤖 *BOT:* ${fancyBotName}
