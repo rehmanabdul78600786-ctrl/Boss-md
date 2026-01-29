@@ -433,13 +433,13 @@ async (conn, mek, m, { from, sender, reply, pushname }) => {
         // Get random bot name
         const botName = getRandomBotName();
         
-        const message = await reply(`*${botName} Pinging...*`);
+        const message = await reply(`*${botName} chloye oing huny dy...*`);
         
         const endTime = Date.now();
         const ping = endTime - startTime;
         
         await conn.sendMessage(from, { 
-            text: `*🏓 ${botName} PONG : ${ping}ms*` 
+            text: `*🏓 ${botName} Ping : ${ping}ms*` 
         }, { quoted: message });
         
     } catch (e) {
@@ -506,7 +506,7 @@ async (conn, mek, m, { from, reply }) => {
 
 // Send welcome message when someone says ping
 cmd({
-    pattern: "$ping",
+    pattern: "ping4",
     desc: "Auto response to ping mentions",
     category: "auto",
     filename: __filename,
