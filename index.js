@@ -641,3 +641,116 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
+// ======================
+// ✅ BOSS-MD BOT FIX
+// ======================
+
+// 1. CREDENTIALS LOADER FUNCTION
+function loadCredentials() {
+    try {
+        console.log('🔍 Checking for session token...');
+        
+        // Heroku se token lo
+        const token = process.env.SESSION_ID;
+        
+        if (!token) {
+            console.log('❌ ERROR: SESSION_ID nahi mili');
+            console.log('💡 SOLUTION: Heroku Config Vars mein SESSION_ID daalo');
+            return null;
+        }
+        
+        console.log('✅ Token mil gayi (' + token.length + ' chars)');
+        
+        // "BOSS-MD~" hatao agar hai to
+        const cleanToken = token.startsWith('BOSS-MD~') 
+            ? token.substring(7) 
+            : token;
+        
+        // Base64 decode karo
+        const decoded = Buffer.from(cleanToken, 'base64').toString('utf-8');
+        
+        // JSON parse karo
+        const credentials = JSON.parse(decoded);
+        
+        console.log('🎉 Credentials loaded successfully!');
+        console.log('👤 User:', credentials.me?.name || 'Boss');
+        
+        return credentials;
+        
+    } catch (error) {
+        console.log('❌ CRITICAL ERROR:', error.message);
+        return null;
+    }
+}
+
+// 2. BOT START FUNCTION
+async function startWhatsAppBot() {
+    console.log('\n🚀 ==============================');
+    console.log('🚀 BOSS-MD BOT STARTING...');
+    console.log('🚀 ==============================\n');
+    
+    // Credentials load karo
+    const credentials = loadCredentials();
+    
+    if (!credentials) {
+        console.log('❌ Bot cannot start without credentials');
+        console.log('📞 Contact support if problem continues');
+        return;
+    }
+    
+    try {
+        // WhatsApp connection banayo
+        console.log('🔗 Connecting to WhatsApp...');
+        
+        const sock = makeWASocket({
+            auth: credentials,
+            printQRInTerminal: false,
+            markOnlineOnConnect: true,
+            syncFullHistory: false
+        });
+        
+        // Connection status track karo
+        sock.ev.on('connection.update', (update) => {
+            console.log('📡 Connection Status:', update.connection);
+            
+            if (update.connection === 'open') {
+                console.log('\n🎉🎉🎉 SUCCESS! 🎉🎉🎉');
+                console.log('✅ WHATSAPP CONNECTED!');
+                console.log('✅ BOSS-MD IS NOW ACTIVE!');
+                console.log('👤 User ID:', sock.user?.id);
+                
+                // Owner ko confirmation message bhejo
+                setTimeout(() => {
+                    sock.sendMessage('923076411099@s.whatsapp.net', {
+                        text: `✅ *BOSS-MD ACTIVATED*\n\nBot successfully connected via token!\nTime: ${new Date().toLocaleTimeString()}\n\nNow all commands will work perfectly! 🎯`
+                    }).catch(e => console.log('Message send error:', e.message));
+                }, 2000);
+            }
+            
+            if (update.connection === 'close') {
+                console.log('⚠️ Connection closed, reconnecting...');
+                // Auto-reconnect logic yahan add kar sakte ho
+            }
+        });
+        
+        // Message handling
+        sock.ev.on('messages.upsert', ({ messages }) => {
+            const msg = messages[0];
+            if (!msg.message) return;
+            
+            console.log('📨 New message from:', msg.key.remoteJid);
+            // Yahan aapka message handling code aayega
+        });
+        
+        console.log('\n🤖 Bot initialization complete!');
+        console.log('⏳ Waiting for WhatsApp connection...\n');
+        
+    } catch (error) {
+        console.log('❌ Bot startup error:', error.message);
+    }
+}
+
+// 3. BOT KO START KARO
+// Agar aapka existing start function hai to usko comment kardo
+// startBot(); // Purana function comment kardo
+startWhatsAppBot(); // Naya function chalado
