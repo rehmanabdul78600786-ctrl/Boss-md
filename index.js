@@ -13,7 +13,7 @@ function setupMemoryOptimization() {
         } catch (err) {
             console.error("Memory cleanup error:", err.message);
         }
-    }, 30000);
+    }, 180000);
 }
 
 setupMemoryOptimization();
