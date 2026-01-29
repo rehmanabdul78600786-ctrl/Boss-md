@@ -27,7 +27,7 @@ async (conn, mek, m, { from }) => {
 
         // First message
         const sentMsg = await conn.sendMessage(from, {
-            text: "⏳ Pinging..."
+            //text: "⏳ Pinging..."
         }, { quoted: mek });
 
         // 1 second delay
