@@ -74,7 +74,7 @@ ${timeEmoji} *${greeting}, ${pushname || "User"}!*
 `;
 
         // DELETE loading message if exists
-        if (m.quoted && m.quoted.key) await conn.sendMessage(from, { delete: m.quoted.key });
+        //if (m.quoted && m.quoted.key) await conn.sendMessage(from, { delete: m.quoted.key });
 
         // SEND VIDEO WITH STATUS
         await conn.sendMessage(from, {
