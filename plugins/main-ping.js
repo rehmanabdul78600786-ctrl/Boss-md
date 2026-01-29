@@ -68,7 +68,7 @@ function getRandomBotName() {
 
 // ORIGINAL PING COMMAND (Your ping2 renamed as ping)
 cmd({
-    pattern: "ping2",
+    pattern: "pong",
     alias: ["speed", "pong", "test", "ping2"], // ADDED ping2 as alias
     desc: "Check bot's response time with fancy design.",
     category: "main",
@@ -281,7 +281,7 @@ ${theme.corner[2]}${theme.border.repeat(30)}${theme.corner[3]}
 
 // VIDEO PING COMMAND - Your original ping2 with video
 cmd({
-    pattern: "ping",
+    pattern: "ping2",
     alias: ["videoping", "vp", "vidping"], // Your original ping2 command
     use: '.ping',
     desc: "Video ping with fancy design.",
@@ -419,7 +419,7 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
 
 // SIMPLE PONG COMMAND (Your original simple ping)
 cmd({
-    pattern: "pong",
+    pattern: "ping",
     alias: ["simpleping", "sp"],
     desc: "Simple ping response.",
     category: "main",
