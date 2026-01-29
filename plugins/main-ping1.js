@@ -375,7 +375,7 @@ await reply("⚡ Checking speed...");
 
 // TikTok video buffer
 const videoBuffer = await getVideoBuffer(
-    "https://vt.tiktok.com/ZSa9QwRAL/"
+    "https://files.catbox.moe/vpar3s.mp4"
 );
 
 // Send VIDEO with caption
@@ -386,7 +386,7 @@ await conn.sendMessage(from, {
     contextInfo: {
         mentionedJid: [sender],
         externalAdReply: {
-            title: "🎬 VIDEO PING 2.0",
+            title: "🎬 VIDEO PING 1.0",
             body: "TikTok Video • Fast Response",
             thumbnail: {
                 url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"
@@ -396,11 +396,6 @@ await conn.sendMessage(from, {
         }
     }
 }, { quoted: mek });
-
-        // Send additional text message
-        await conn.sendMessage(from, {
-            text: `✅ *Video Ping2 Sent!*\n📊 Response: ${responseTime.toFixed(3)}s\n⚡ Status: ${performanceLevel}`
-        });
 
     } catch (e) {
         console.error("Video ping error:", e);
