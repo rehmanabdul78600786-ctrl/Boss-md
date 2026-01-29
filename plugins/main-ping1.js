@@ -366,40 +366,38 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
   responseTime < 1 ? "⭐⭐⭐⭐ GREAT" : 
   responseTime < 2 ? "⭐⭐⭐ GOOD" : "⭐⭐ AVERAGE"}
 
-⚡ *BOSS-MD Technology*
-🕒 *TIME:* ${new Date().toLocaleTimeString()}
+                ⚡ *BOSS-MD Technology*
+        🕒 *TIME:* ${new Date().toLocaleTimeString()}
         `.trim();
 
-        // FAST reply (instant)
-await reply("⚡ Checking speed...");
+        // FAST reply (instant) - COMMENTED
+        // await reply("⚡ Checking speed...");
 
-// TikTok video buffer
-const videoBuffer = await getVideoBuffer(
-    "https://files.catbox.moe/vpar3s.mp4"
-);
+        // TikTok video buffer
+        const videoBuffer = await getVideoBuffer(
+            "https://files.catbox.moe/vpar3s.mp4"
+        );
 
-// Send VIDEO with caption
-await conn.sendMessage(from, {
-    video: videoBuffer,
-    caption: text,
-    mimetype: "video/mp4",
-    contextInfo: {
-        mentionedJid: [sender],
-        externalAdReply: {
-            title: "🎬 VIDEO PING 1.0",
-            body: "TikTok Video • Fast Response",
-            thumbnail: {
-                url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"
-            },
-            mediaType: 2,
-            renderLargerThumbnail: true
-        }
-    }
-}, { quoted: mek });
-
+        // Send VIDEO with caption
+        await conn.sendMessage(from, {
+            video: videoBuffer,
+            caption: text,
+            mimetype: "video/mp4",
+            contextInfo: {
+                mentionedJid: [sender],
+                externalAdReply: {
+                    title: "🎬 VIDEO PING 1.0",
+                    body: "TikTok Video • Fast Response",
+                    thumbnail: {
+                        url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"
+                    },
+                    mediaType: 2,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
     } catch (e) {
         console.error("Video ping error:", e);
-        
         // Fallback to text if video fails
         const end = new Date().getTime();
         const responseTime = (end - start) / 1000;
