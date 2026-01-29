@@ -1,104 +1,148 @@
 const { cmd } = require('../command');
 
-// =================== Fun Messages ===================
-const muthMessages = [
-    "😂 Muth Mare! Dost hiraan ho gaya 😏",
-    "🤣 Dost bhi react kar raha hai! Muth level max!",
-    "😎 Boss-MD dekha! Ye muth kamaal ka tha!",
-    "😜 Arre bhai, ye muth bhi zabardast tha! Ha ha ha!",
-    "😆 Haha! Sab ne muth feel kiya! 😂"
-];
-
-const muthImages = [
-    "https://i.ibb.co/8dF7s6f/muth1.jpg",
-    "https://i.ibb.co/Vwx3JTp/muth2.jpg",
-    "https://i.ibb.co/NFZfXvQ/muth3.jpg"
-];
-
-const ungliMessages = [
-    "🖕 Ungli dekh ke shock ho gaye?",
-    "😜 Boss-MD ki ungli unbeatable!",
-    "😂 Ungli mode activated! Dost hiran!",
-    "😏 Arre bhai, ungli ka level max!"
-];
-
-const xMessages = [
-    "😱 Chupy lao! Surprise! 😎",
-    "😳 Arre bhai, x command ne hiraan kar diya!",
-    "👀 Dekha? Boss-MD ka magic! 🤣",
-    "😂 Haha! Ye x command full funny tha!"
-];
-
-const xImages = [
-    "https://i.ibb.co/2y0vVQx/x1.jpg",
-    "https://i.ibb.co/NYX1YB3/x2.jpg"
-];
-
-// =================== .muth Command ===================
+// =================== .muth Command (Animation Sequence) ===================
 cmd({
     pattern: "muth",
-    alias: [],
-    desc: "Fun muth command with emojis & images",
+    alias: ["muthi", "muthmare", "fap", "handjob"],
+    desc: "Muth animation emoji sequence",
     category: "fun",
     react: "✊",
     filename: __filename,
-    use: ".muth"
-}, async (conn, mek, m, { from }) => {
+    use: ".muth @user"
+}, async (conn, mek, m, { from, isGroup }) => {
     try {
-        const msg = muthMessages[Math.floor(Math.random() * muthMessages.length)];
-        const img = muthImages[Math.floor(Math.random() * muthImages.length)];
-
+        // Target user
+        const mentioned = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : mek.key.participant || mek.key.remoteJid;
+        const userNum = mentioned.split('@')[0];
+        
+        // Start message
         await conn.sendMessage(from, {
-            image: { url: img },
-            caption: msg
+            text: `✊ *MUTH MODE ACTIVATED!*\nTarget: @${userNum}\nBoss-MD muth sequence starting...`,
+            mentions: [mentioned]
         }, { quoted: mek });
+
+        // MUTH Animation Sequence
+        const muthSequence = [
+            { text: "🥵 *Garam hona shuru...*", delay: 1000 },
+            { text: "🤭 *Hath ready ho raha...*", delay: 1200 },
+            { text: "✊ *Muth phase 1...*", delay: 1000 },
+            { text: "✊✊ *Muth phase 2...*", delay: 800 },
+            { text: "✊✊✊ *Muth phase 3...*", delay: 600 },
+            { text: "😵 *Aaahhhh...*", delay: 1000 },
+            { text: "💧 *Drop 1...*", delay: 500 },
+            { text: "💦 *Drop 2...*", delay: 500 },
+            { text: "💦💦💦 *Fountain!*", delay: 800 },
+            { text: "😵‍💫 *Khatam...*", delay: 1000 },
+            { text: "🤤🤤 *MUTH COMPLETE!*\n@${userNum} ne muth mar li! 👏", delay: 1000 }
+        ];
+
+        // Send each message with delay
+        for (const step of muthSequence) {
+            await new Promise(resolve => setTimeout(resolve, step.delay));
+            await conn.sendMessage(from, { 
+                text: step.text.replace('${userNum}', userNum),
+                mentions: [mentioned]
+            });
+        }
+
     } catch (e) {
-        console.error("Muth Command Error:", e);
-        await conn.sendMessage(from, { text: "❌ Error in .muth command!" }, { quoted: mek });
+        console.error("Muth Animation Error:", e);
     }
 });
 
-// =================== .ungli Command ===================
+// =================== .ungli Command (Animation Sequence) ===================
 cmd({
     pattern: "ungli",
-    alias: [],
-    desc: "Random fun message - Ungli",
+    alias: ["finger", "middlefinger", "fing", "bhenchod"],
+    desc: "Ungli animation emoji sequence",
     category: "fun",
     react: "🖕",
     filename: __filename,
-    use: ".ungli"
-}, async (conn, mek, m, { from }) => {
+    use: ".ungli @user"
+}, async (conn, mek, m, { from, isGroup }) => {
     try {
-        const msg = ungliMessages[Math.floor(Math.random() * ungliMessages.length)];
-        await conn.sendMessage(from, { text: msg }, { quoted: mek });
-    } catch (e) {
-        console.error("Ungli Command Error:", e);
-        await conn.sendMessage(from, { text: "❌ Error in .ungli command!" }, { quoted: mek });
-    }
-});
-
-// =================== .x Command ===================
-cmd({
-    pattern: "x",
-    alias: [],
-    desc: "Surprise / Chupy lao fun with images",
-    category: "fun",
-    react: "❌",
-    filename: __filename,
-    use: ".x"
-}, async (conn, mek, m, { from }) => {
-    try {
-        const msg = xMessages[Math.floor(Math.random() * xMessages.length)];
-        const img = xImages[Math.floor(Math.random() * xImages.length)];
-
+        // Target user
+        const mentioned = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : mek.key.participant || mek.key.remoteJid;
+        const userNum = mentioned.split('@')[0];
+        
+        // Start message
         await conn.sendMessage(from, {
-            image: { url: img },
-            caption: msg
+            text: `🖕 *UNGLI MODE ACTIVATED!*\nTarget: @${userNum}\nBoss-MD ungli sequence starting...`,
+            mentions: [mentioned]
         }, { quoted: mek });
+
+        // UNGLI Animation Sequence
+        const ungliSequence = [
+            { text: "😠 *Gussa aana shuru...*", delay: 1000 },
+            { text: "🤬 *Gaali dimaag mein...*", delay: 1200 },
+            { text: "👆 *Ungli uthi...*", delay: 1000 },
+            { text: "🖕 *Ungli ready...*", delay: 800 },
+            { text: "🖕 *Ungli target lock...* @${userNum}", delay: 1000 },
+            { text: "💥 *Ungli fire!* Bhenchod!", delay: 800 },
+            { text: "🤯 *Target hit!*", delay: 600 },
+            { text: "😵 *Target knocked out!*", delay: 800 },
+            { text: "🎯 *Direct hit!*", delay: 600 },
+            { text: "🔥 *Ungli complete!*\n@${userNum} ko ungli mil gayi! 🖕", delay: 1000 }
+        ];
+
+        // Send each message with delay
+        for (const step of ungliSequence) {
+            await new Promise(resolve => setTimeout(resolve, step.delay));
+            await conn.sendMessage(from, { 
+                text: step.text.replace('${userNum}', userNum),
+                mentions: [mentioned]
+            });
+        }
+
     } catch (e) {
-        console.error("X Command Error:", e);
-        await conn.sendMessage(from, { text: "❌ Error in .x command!" }, { quoted: mek });
+        console.error("Ungli Animation Error:", e);
     }
 });
 
-console.log("🎉 Megnumin Ultimate Fun Plugin Loaded!");
+// =================== .sex Command (Optional Extra) ===================
+cmd({
+    pattern: "sex",
+    alias: ["chudai", "fuck", "porn"],
+    desc: "Sex animation emoji sequence",
+    category: "fun",
+    react: "🍆",
+    filename: __filename,
+    use: ".sex @user"
+}, async (conn, mek, m, { from }) => {
+    try {
+        const mentioned = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : mek.key.remoteJid;
+        const userNum = mentioned.split('@')[0];
+        
+        await conn.sendMessage(from, {
+            text: `🍑 *SEX MODE ACTIVATED!*\nTarget: @${userNum}\nBoss-MD sex sequence starting...`,
+            mentions: [mentioned]
+        }, { quoted: mek });
+
+        const sexSequence = [
+            { text: "👙 *Kapde utar rahe...*", delay: 1200 },
+            { text: "🍆 *Lund khada...*", delay: 1000 },
+            { text: "🍑 *Gaand ready...*", delay: 800 },
+            { text: "💦 *Chikni chut...*", delay: 1000 },
+            { text: "🔥 *Andar ghusa...* Aahhh!", delay: 800 },
+            { text: "💥 *Jhatke lage...* 1...", delay: 600 },
+            { text: "💥💥 *Jhatke lage...* 2...", delay: 500 },
+            { text: "💥💥💥 *Jhatke lage...* 3...", delay: 400 },
+            { text: "😫 *Aaahhh aa raha...*", delay: 800 },
+            { text: "💦💦💦 *Nikla!* Splash!", delay: 600 },
+            { text: "😵‍💫 *Khatam tashan!*\n@${userNum} ki chudai ho gayi! 🎉", delay: 1000 }
+        ];
+
+        for (const step of sexSequence) {
+            await new Promise(resolve => setTimeout(resolve, step.delay));
+            await conn.sendMessage(from, { 
+                text: step.text.replace('${userNum}', userNum),
+                mentions: [mentioned]
+            });
+        }
+
+    } catch (e) {
+        console.error("Sex Animation Error:", e);
+    }
+});
+
+console.log("✅ Muth/Ungli Animation Plugin Loaded!");
