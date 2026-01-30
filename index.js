@@ -1,68 +1,23 @@
-// ==================== SMART MEMORY MANAGER ====================
-console.log('🧠 Smart Memory Manager Activated');
+// ==================== MEMORY OPTIMIZATION ====================
+global.gc = global.gc || (() => {});
+let memoryCleanInterval = null;
 
-let lastCleanupTime = 0;
-const MAX_MEMORY_MB = 400; // 400MB tak safe
-const CLEANUP_COOLDOWN = 600000; // 10 minutes cooldown
-
-function smartMemoryManager() {
-    const now = Date.now();
-    const mem = process.memoryUsage();
-    const usedMB = mem.heapUsed / 1024 / 1024;
-    
-    // RULE 1: Cooldown check - 10 minute gap
-    if (now - lastCleanupTime < CLEANUP_COOLDOWN) {
-        console.log(`⏳ Cleanup cooldown: ${Math.floor((CLEANUP_COOLDOWN - (now - lastCleanupTime)) / 1000)}s left`);
-        return;
-    }
-    
-    // RULE 2: Only clean if memory > 400MB
-    if (usedMB > MAX_MEMORY_MB) {
-        console.log(`🚨 Emergency: Memory ${usedMB.toFixed(1)}MB > ${MAX_MEMORY_MB}MB`);
-        lastCleanupTime = now;
-        
-        // ASYNC CLEANUP - Bot freeze nahi hoga
-        setImmediate(() => {
-            try {
-                console.log('🧹 Starting non-blocking cleanup...');
-                
-                // 1. Clear temp cache
-                if (global.tempCache) {
-                    global.tempCache = {};
-                }
-                
-                // 2. Clear message queue if exists
-                if (global.messageQueue && global.messageQueue.length > 50) {
-                    global.messageQueue = global.messageQueue.slice(-20);
-                    console.log('📉 Queue reduced to 20 messages');
-                }
-                
-                // 3. Soft GC (optional)
-                if (global.gc) {
-                    setTimeout(() => global.gc(), 100);
-                }
-                
-                // 4. Result log
-                setTimeout(() => {
-                    const newMB = process.memoryUsage().heapUsed / 1024 / 1024;
-                    console.log(`✅ Cleanup done: ${newMB.toFixed(1)}MB (Saved ${(usedMB - newMB).toFixed(1)}MB)`);
-                }, 200);
-                
-            } catch (error) {
-                console.error('Cleanup error:', error.message);
+function setupMemoryOptimization() {
+    memoryCleanInterval = setInterval(() => {
+        try {
+            if (global.gc) {
+                global.gc();
             }
-        });
-        
-    } else if (usedMB > 350) {
-        console.log(`⚠️ Warning: Memory ${usedMB.toFixed(1)}MB (接近 limit)`);
-        // Warning only, no cleanup
-    } else {
-        console.log(`✅ Memory OK: ${usedMB.toFixed(1)}MB`);
-    }
+            const memoryUsage = process.memoryUsage();
+            console.log(`🔄 Memory Cleaned - Heap: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)}MB`);
+        } catch (err) {
+            console.error("Memory cleanup error:", err.message);
+        }
+    }, 30000);
 }
 
-// Check every 2 minutes
-setInterval(smartMemoryManager, 120000);
+setupMemoryOptimization();
+
 const {
   default: makeWASocket,
     useMultiFileAuthState,
