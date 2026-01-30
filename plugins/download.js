@@ -317,4 +317,317 @@ cmd({
     reply("❌ An error occurred while fetching the Google Drive file. Please try again.");
   }
 }); 
-  
+const axios = require("axios");
+const { cmd } = require("../command");
+
+// FAIZAN-MD styled titles
+const fbTitles = [
+  "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 📥 *Facebook Video Download*\n│ ✅ *Download Successful*\n└─────────────\n\n*© POWERED BY 𝐵𝒪𝒮𝒮-𝑀𝒟*",
+  "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 📥 *Facebook Video Download*\n│ 🎬 *HD Video Ready*\n└─────────────\n\n*© POWERED BY 𝘽𝙊𝙎𝙎-𝙈𝘿*",
+  "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 📥 *Facebook Video Download*\n│ ⚡ *Fast Download*\n└─────────────\n\n*© POWERED BY 𝘽𝙊𝙎𝙎-𝙈𝘿*",
+  "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 📥 *Facebook Video Download*\n│ 🚀 *Completed*\n└─────────────\n\n*© POWERED BY 𝘽𝙊𝙎𝙎-𝙈𝘿*"
+];
+
+let fbTitleIndex = 0;
+
+cmd({
+  pattern: "fb",
+  alias: ["facebook", "fbvideo"],
+  react: "📥",
+  desc: "Download Facebook videos",
+  category: "download",
+  use: ".fb <facebook url>",
+  filename: __filename
+}, async (conn, mek, m, { from, reply, args }) => {
+  try {
+    const fbUrl = args[0];
+
+    if (!fbUrl || !fbUrl.includes("facebook.com")) {
+      return reply(
+        "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Invalid Facebook URL*\n│ Example:\n│ .fb https://facebook.com/...\n└─────────────"
+      );
+    }
+
+    await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
+
+    await conn.sendMessage(from, {
+      text:
+        "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🔍 *Processing Link...*\n│ 📥 *Fetching Video*\n└─────────────"
+    }, { quoted: mek });
+
+    const apiUrl = `https://edith-apis.vercel.app/download/facebook?url=${encodeURIComponent(fbUrl)}`;
+    const { data } = await axios.get(apiUrl, { timeout: 20000 });
+
+    if (!data || data.status !== true) {
+      return reply(
+        "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download Failed*\n│ Facebook may be blocking this video\n└─────────────"
+      );
+    }
+
+    const media = data?.result?.media || {};
+    const videoUrl =
+      media.video_hd ||
+      media.video_sd ||
+      media.video ||
+      null;
+
+    if (!videoUrl) {
+      return reply(
+        "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ⚠️ *Video URL not found*\n│ Reel may be private or restricted\n└─────────────"
+      );
+    }
+
+    const caption = fbTitles[fbTitleIndex];
+    fbTitleIndex = (fbTitleIndex + 1) % fbTitles.length;
+
+    await conn.sendMessage(from, {
+      video: { url: videoUrl },
+      caption
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
+
+  } catch (err) {
+    console.error("𝘽𝙊𝙎𝙎-𝙈𝘿 FB ERROR:", err);
+    reply(
+      "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Facebook Download Failed*\n│ Try another video\n└─────────────"
+    );
+  }
+});
+const axios = require("axios");
+const { cmd } = require('../command');
+
+cmd({
+    pattern: "igdl",
+    alias: ["instagram", "insta", "ig"],
+    react: "⬇️",
+    desc: "Download Instagram videos/reels",
+    category: "downloader",
+    use: ".igdl <Instagram URL>",
+    filename: __filename
+}, async (conn, mek, m, { from, reply, args, q }) => {
+    try {
+        const url = q || m.quoted?.text;
+        if (!url || !url.includes("instagram.com")) {
+            return reply("❌ Please provide/reply to an Instagram link");
+        }
+
+        // Show processing reaction
+        await conn.sendMessage(from, { react: { text: '⏳', key: m.key } });
+
+        // Fetch from API
+        const apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${encodeURIComponent(url)}`;
+        const response = await axios.get(apiUrl);
+
+        if (!response.data?.status || !response.data.data?.length) {
+            await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+            return reply("Failed to fetch media. Invalid link or private content.");
+        }
+
+        // Send all media items
+        for (const item of response.data.data) {
+            await conn.sendMessage(from, {
+                [item.type === 'video' ? 'video' : 'image']: { url: item.url },
+                caption: `‎*_ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ_*
+‎*╭──────────────━┈⍟*
+‎┋ *_𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 𝐁𝐎𝐒𝐒-𝐌𝐃_* 
+‎*╰──────────────━┈⍟*
+‎`
+            }, { quoted: mek });
+        }
+
+        // Success reaction
+        await conn.sendMessage(from, { react: { text: '✅', key: m.key } });
+
+    } catch (error) {
+        console.error('IGDL Error:', error);
+        await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+        reply("❌ Download failed. Try again later.");
+    }
+});
+
+cmd({
+  pattern: "igdl4",
+  alias: ["instagram4", "insta4", "ig4", "igvideo4"],
+  react: '📶',
+  desc: "Download videos from Instagram (Alternative API)",
+  category: "download",
+  use: ".igdl2 <Instagram URL>",
+  filename: __filename
+}, async (conn, mek, m, { from, reply, args }) => {
+  try {
+    const igUrl = args[0];
+    if (!igUrl || !igUrl.includes("instagram.com")) {
+      return reply('Please provide a valid Instagram URL. Example: `.igdl2 https://instagram.com/...`');
+    }
+
+    await conn.sendMessage(from, { react: { text: '⏳', key: m.key } });
+
+    const apiUrl = `https://bk9.fun/download/instagram?url=${encodeURIComponent(igUrl)}`;
+    const response = await axios.get(apiUrl);
+
+    if (!response.data?.status || !response.data?.BK9?.[0]?.url) {
+      await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+      return reply('❌ Unable to fetch the video. Try .igdl2 for primary download.');
+    }
+
+    const videoUrl = response.data.BK9[0].url;
+    await conn.sendMessage(from, { react: { text: '📶', key: m.key } });
+
+    const videoResponse = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+    if (!videoResponse.data) {
+      await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+      return reply('❌ Failed to download the video. Please try again later.');
+    }
+
+    const videoBuffer = Buffer.from(videoResponse.data, 'binary');
+
+    await conn.sendMessage(from, {
+      video: videoBuffer,
+      caption: `*_ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ_*
+‎*╭───────────────━┈⍟*
+‎┋ *_𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 𝐵𝒪𝒮𝒮-𝑀𝒟_* 
+‎*╰───────────────━┈⍟*`,
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { react: { text: '✅', key: m.key } });
+  } catch (error) {
+    console.error('Error downloading video:', error);
+    await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+    reply('❌ API 2 failed. Try .igdl for primary download.');
+  }
+});
+
+cmd({
+  pattern: "igdl2",
+  alias: ["instagram2", "ig2", "instadl2"],
+  react: '📥',
+  desc: "Download videos from Instagram (API v5)",
+  category: "download",
+  use: ".igdl5 <Instagram video URL>",
+  filename: __filename
+}, async (conn, mek, m, { from, reply, args }) => {
+  try {
+    const igUrl = args[0];
+    if (!igUrl || !igUrl.includes("instagram.com")) {
+      return reply('❌ Please provide a valid Instagram video URL.\n\nExample:\n.igdl5 https://instagram.com/reel/...');
+    }
+
+    await conn.sendMessage(from, { react: { text: '⏳', key: m.key } });
+
+    const apiUrl = `https://jawad-tech.vercel.app/downloader?url=${encodeURIComponent(igUrl)}`;
+    const response = await axios.get(apiUrl);
+
+    const data = response.data;
+
+    if (!data.status || !data.result || !Array.isArray(data.result)) {
+      return reply('❌ Unable to fetch the video. Please check the URL and try again.');
+    }
+
+    const videoUrl = data.result[0];
+    if (!videoUrl) return reply("❌ No video found in the response.");
+
+    const metadata = data.metadata || {};
+    const author = metadata.author || "Unknown";
+    const caption = metadata.caption ? metadata.caption.slice(0, 300) + "..." : "No caption provided.";
+    const likes = metadata.like || 0;
+    const comments = metadata.comment || 0;
+
+    await reply('ᴜᴘʟᴏᴀᴅɪɴɢ ʏᴏᴜʀ ᴠɪᴅᴇᴏ ᴡᴀɪᴛ...');
+
+    await conn.sendMessage(from, {
+      video: { url: videoUrl },
+      caption: `📥 *Instagram Reel Downloader*\n👤 *Author:* ${author}\n💬 *Caption:* ${caption}\n❤️ *Likes:* ${likes} | 💭 *Comments:* ${comments}\n\n> 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 𝐵𝒪𝒮𝒮-𝑀𝒟`
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { react: { text: '✅', key: m.key } });
+  } catch (error) {
+    console.error('IGDL5 Error:', error);
+    reply('❌ Failed to download the Instagram video. Please try again later.');
+    await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+  }
+});
+cmd({
+    pattern: "ig3",
+    alias: ["insta3", "instagram3"],
+    desc: "Download Instagram video",
+    category: "downloader",
+    react: "⤵️",
+    filename: __filename
+},
+async (conn, mek, m, { from, args, q, reply }) => {
+    try {
+        if (!q) return reply("Please provide an Instagram video link.");
+        if (!q.includes("instagram.com")) return reply("Invalid Instagram link.");
+        
+        reply("Downloading video, please wait...");
+        
+        const apiUrl = `https://rest-lily.vercel.app/api/downloader/igdl?url=${q}`;
+        const { data } = await axios.get(apiUrl);
+        
+        if (!data.status || !data.data || !data.data[0]) return reply("Failed to fetch Instagram video.");
+        
+        const { url } = data.data[0];
+        
+        const caption = 
+`*_ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ_*
+‎*╭───────────────━┈⍟*
+‎┋ *_𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 𝐵𝒪𝒮𝒮-𝑀𝒟_* 
+‎*╰───────────────━┈⍟*`;
+        
+        await conn.sendMessage(from, {
+            video: { url: url },
+            caption: caption,
+            contextInfo: { mentionedJid: [m.sender] }
+        }, { quoted: mek });
+        
+    } catch (e) {
+        console.error("Error in Instagram downloader command:", e);
+        reply(`An error occurred: ${e.message}`);
+    }
+});
+const { cmd } = require('../command');
+const axios = require('axios');
+const config = require('../config');
+
+cmd({
+    pattern: "tt",
+    alias: ["tiktok", "ttdl"],
+    react: "🎵",
+    desc: "Download TikTok video without watermark",
+    category: "download",
+    use: ".tt <tiktok url>",
+    filename: __filename
+}, async (conn, mek, m, { from, q, reply }) => {
+    try {
+        if (!q || !q.includes("tiktok")) {
+            return reply("❌ TikTok link do\nExample:\n.tt https://vm.tiktok.com/xxxx");
+        }
+
+        await reply("⏳ *𝓑𝓞𝓢𝓢-𝓜𝓓 downloading TikTok...*");
+
+        const apiUrl = `https://arslanmd-api.vercel.app/api/ttdl?url=${encodeURIComponent(q)}`;
+        const { data } = await axios.get(apiUrl);
+
+        if (!data.status || !data.result?.video) {
+            return reply("❌ TikTok download failed\nLink private ya expired ho sakta hai.");
+        }
+
+        const caption = `
+🎵 *TikTok Downloaded*
+👤 Author: ${data.result.author || "Unknown"}
+
+⚡ Powered by *𝓑𝓞𝓢𝓢-𝓜𝓓*
+        `.trim();
+
+        await conn.sendMessage(from, {
+            video: { url: data.result.video },
+            caption: caption,
+            mimetype: "video/mp4"
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error("TikTok Error:", e);
+        reply("❌ Error while downloading TikTok");
+    }
+});
