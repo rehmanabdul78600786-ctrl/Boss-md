@@ -62,7 +62,7 @@ cmd({
 │ 📥 Mode: ${mode === "doc" ? "Document" : "Video"}
 │
 └─────────────
-© Powered by Arslan-MD`;
+© Powered by Boss-MD`;
 
         const messageData = mode === "doc"
             ? {
@@ -95,7 +95,7 @@ cmd({
 
     } catch (e) {
         console.log(e);
-        reply("❌ Bhai download nahi ho saka");
+        reply("❌ Bhai download nahi ho saka bc");
         await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
     }
 });
