@@ -1,7 +1,6 @@
 const { cmd, commands } = require('../command');
+const config = require('../config');
 const { runtime } = require('../lib/functions');
-const { generateWAMessageContent, proto } = require('@adiwajshing/baileys'); // ensure baileys v5
-const fs = require('fs');
 
 cmd({
     pattern: "menu",
@@ -17,115 +16,127 @@ cmd({
         if(isOwner) status = "Owner";
         else if(isPremium) status = "Premium";
 
-        const singleImageUrl = global.thumbnail || 'https://files.catbox.moe/xla7at.jpg';
         const totalCommands = Object.keys(commands || {}).length;
 
-        async function createImage(url) {
-            const { imageMessage } = await generateWAMessageContent({
-                image: { url }
-            }, { upload: conn.waUploadToServer });
-            return imageMessage;
+        // ===================== 1. Voice message =====================
+        try {
+            const audioUrl = "https://image2url.com/r2/default/audio/1769566776748-b31cdb1b-c1fa-413e-86b3-0c0e7b405e45.mp3";
+            await conn.sendMessage(from, {
+                audio: { url: audioUrl },
+                mimetype: 'audio/mpeg',
+                ptt: true,
+                fileName: 'BOSS-MD-Welcome.mp3'
+            }, { quoted: mek });
+        } catch(err){
+            console.log("Audio Error (ignored):", err.message);
         }
 
-        // Menu sections
-        const menuSections = [
-`╭┈〘 🔥 BOSS-MD v5.0 🔥 〙┈➤
-┆ 👑 Owner: ${config.OWNER_NAME}
-┆ 🔣 Prefix: [${prefix}]
-┆ 📚 Commands: ${totalCommands}
-┆ 🏃 Runtime: ${runtime(process.uptime())}
-┆ ⚡ Status: ${status}
-╰┈➤ 🎯 QUICK MENU
-> Type ${prefix}menu <number>`,
-`╭┈〘 📥 DOWNLOAD MENU 〙┈➤
-┆ .play [song]
-┆ .ytmp3 [url]
-┆ .ytmp4 [url]
-┆ .spotify [query]
-┆ .song [name]
-╰┈➤ Type ${prefix}menu 2 for Group Menu`,
-`╭┈〘 👥 GROUP MENU 〙┈➤
-┆ .add @user
-┆ .remove @user
-┆ .kick @user
-┆ .promote @user
-┆ .demote @user
-┆ .mute [time]
-┆ .unmute
-╰┈➤ Type ${prefix}menu 3 for Fun Menu`,
-`╭┈〘 😄 FUN & GAMES 〙┈➤
-┆ .shapar
-┆ .rate @user
-┆ .joke
-┆ .fact
-┆ .roll
-┆ .flip
-┆ .rcolor
-╰┈➤ Type ${prefix}menu 4 for Owner Panel`,
-`╭┈〘 👑 OWNER PANEL 〙┈➤
-┆ .public / .self
-┆ .addprem / .delprem
-┆ .ban
-┆ .unban
-┆ .antilink
-┆ .kickall
-╰┈➤ Type ${prefix}menu 5 for AI Assistant`,
-`╭┈〘 🤖 AI ASSISTANT 〙┈➤
-┆ .chatgpt
-┆ .age
-┆ .nowm
-╰┈➤ Type ${prefix}menu 6 for Anime World`,
-`╭┈〘 🎌 ANIME WORLD 〙┈➤
-┆ .anime
-┆ .animewall
-┆ .manga
-╰┈➤ Type ${prefix}menu 7 for Converter`
-        ];
+        // ===================== 2. Main menu =====================
+        const menuText = `
+╭━━━━━━━━━━━━━━━━━━━━━━━╮
+┃   ░▒▓█ BOSS-MD v5.0 █▓▒░  
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
 
-        const customTitles = [
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 1˙🫐",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 2˙❤️‍🩹",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 3˙📝",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 4˙🎀",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 5˙🧿",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 6˙🌸",
-            "˖ ࣪╰─ ♡ 𝐁𝐎𝐒𝐒 𝐌𝐃 MENU 7˙🌝"
-        ];
+┌─「 📊 BOT STATUS 」─┐
+│ 👑 Owner: ${config.OWNER_NAME}
+│ 🔣 Prefix: [${prefix}]
+│ 📚 Commands: ${totalCommands}
+│ 🏃 Runtime: ${runtime(process.uptime())}
+│ ⚡ Status: ${status}
+└─────────────────────┘
 
-        let push = [];
+▰▰▰▰▰▰▰▰▰▰
+🎯 QUICK MENU
+▰▰▰▰▰▰▰▰▰▰
 
-        for(let i=0; i<menuSections.length; i++){
-            const section = menuSections[i];
-            const title = customTitles[i];
+📥 ${prefix}menu 1 - Download Tools
+👥 ${prefix}menu 2 - Group Manager  
+😄 ${prefix}menu 3 - Fun & Games
+👑 ${prefix}menu 4 - Owner Panel
+🤖 ${prefix}menu 5 - AI Assistant
+🎌 ${prefix}menu 6 - Anime World
+🔄 ${prefix}menu 7 - Converter
+🛠️ ${prefix}menu 8 - Utilities
+💖 ${prefix}menu 9 - Reactions
 
-            push.push({
-                body: proto.Message.InteractiveMessage.Body.fromObject({ text: section }),
-                footer: proto.Message.InteractiveMessage.Footer.fromObject({ text: config.BOT_NAME || "BOSS-MD" }),
-                header: proto.Message.InteractiveMessage.Header.fromObject({
-                    title: title,
-                    hasMediaAttachment: true,
-                    imageMessage: await createImage(singleImageUrl)
-                }),
-                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({
-                    buttons: [
-                        {
-                            name: "quick_reply",
-                            buttonParamsJson: JSON.stringify({
-                                display_text: "🚀 MAIN MENU",
-                                id: ".menu"
-                            })
-                        }
-                    ]
-                })
-            });
-        }
+▰▰▰▰▰▰▰▰▰▰
+💎 VIP FEATURES
+▰▰▰▰▰▰▰▰▰▰
 
-        for(const msg of push){
-            await conn.sendMessage(from, msg, { quoted: mek });
+✦ Voice Integrated ✓
+✦ High-Res Graphics  
+✦ Interactive System
+✦ Premium Styling
+✦ Fast Performance
+
+▰▰▰▰▰▰▰▰▰▰
+📞 CONTACT
+▰▰▰▰▰▰▰▰▰▰
+
+For VIP Support:
+${config.OWNER_NAME}
+@${config.OWNER_NUMBER}
+
+> ${config.DESCRIPTION}`;
+
+        await conn.sendMessage(from, {
+            image: { url: config.MENU_IMAGE_URL || 'https://files.catbox.moe/xla7at.jpg' },
+            caption: menuText,
+            contextInfo: { mentionedJid: [sender] }
+        }, { quoted: mek });
+
+        // ===================== 3. Sub-menu system =====================
+        const args = m.text ? m.text.split(' ').slice(1) : [];
+        if(args[0]){
+            const menuData = {
+                '1': { title: "📥 DOWNLOAD MENU 📥", content: `
+• ${prefix}play [song]
+• ${prefix}ytmp3 [url]
+• ${prefix}ytmp4 [url]
+• ${prefix}spotify [query]
+• ${prefix}song [name]` },
+                '2': { title: "👥 GROUP MENU 👥", content: `
+• ${prefix}add @user
+• ${prefix}remove @user
+• ${prefix}kick @user
+• ${prefix}promote @user
+• ${prefix}demote @user
+• ${prefix}mute [time]
+• ${prefix}unmute` },
+                '3': { title: "😄 FUN MENU 😄", content: `
+• ${prefix}shapar
+• ${prefix}rate @user
+• ${prefix}joke
+• ${prefix}fact
+• ${prefix}roll
+• ${prefix}flip
+• ${prefix}rcolor` },
+                '4': { title: "👑 OWNER PANEL 👑", content: `
+• ${prefix}public / ${prefix}self
+• ${prefix}addprem / ${prefix}delprem
+• ${prefix}ban
+• ${prefix}unban
+• ${prefix}antilink
+• ${prefix}kickall` },
+                '5': { title: "🤖 AI ASSISTANT 🤖", content: `
+• ${prefix}chatgpt
+• ${prefix}age
+• ${prefix}nowm` },
+                '6': { title: "🎌 ANIME WORLD 🎌", content: `
+• ${prefix}anime
+• ${prefix}animewall
+• ${prefix}manga` }
+            };
+
+            const selected = menuData[args[0]];
+            if(selected){
+                await conn.sendMessage(from, { text: `*${selected.title}*\n\n${selected.content}\n\nType ${prefix}menu for main menu` }, { quoted: mek });
+                return;
+            }
         }
 
     } catch(error){
-        console.error('Menu CMD Error:', error);
-        await conn.sendMessage(from, { text: `❌ Error: ${error.message}` }, { quoted: mek });
+        console.error("Menu CMD Error:", error);
+        await conn.sendMessage(from, { text: `❌ Menu Error: ${error.message}` }, { quoted: mek });
     }
-}
+});
