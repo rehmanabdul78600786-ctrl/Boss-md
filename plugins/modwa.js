@@ -1,53 +1,53 @@
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
+const { cmd } = require('../command');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 cmd({
-  pattern: "modwa",
-  desc: "Download & send MOD WhatsApp APK with thumbnail",
-  category: "downloader",
-  filename: __filename
+    pattern: "modwa",
+    react: "📦",
+    desc: "Download & send MOD WhatsApp APK",
+    category: "download",
+    use: ".modwa",
+    filename: __filename
 }, async (conn, mek, m, { from, reply }) => {
-  try {
-    await reply("⏳ *MOD WhatsApp APK aa rahi hai...*");
+    try {
+        await reply("⏳ *MOD WhatsApp APK tayar ki ja rahi hai bc...*");
 
-    // API (status check)
-    const apiUrl = "https://arslan-apis.vercel.app/download/modwhatsappdl?url=https://apkdon.net/fouad-whatsapp/";
-    const apiRes = await axios.get(apiUrl);
-    if (!apiRes.data || apiRes.data.status !== true) {
-      return reply("❌ *API response error*");
-    }
+        // ✅ Direct APK link (stable)
+        const apkUrl = "https://apkdon.net/fouad-whatsapp/";
+        const apkRes = await axios.get(apkUrl, {
+            responseType: "arraybuffer",
+            timeout: 120000
+        });
 
-    // APK download
-    const apkUrl = "https://apkdon.net/fouad-whatsapp/";
-    const apkRes = await axios.get(apkUrl, { responseType: "arraybuffer" });
+        const filePath = path.join(__dirname, "Fouad_WhatsApp_MOD.apk");
+        fs.writeFileSync(filePath, apkRes.data);
 
-    const filePath = path.join(__dirname, "Fouad_WhatsApp_MOD.apk");
-    fs.writeFileSync(filePath, apkRes.data);
+        // ✅ Thumbnail
+        const thumbUrl = "https://i.imgur.com/9QZ7K6x.jpg";
+        const thumb = await axios.get(thumbUrl, { responseType: "arraybuffer" });
 
-    // Thumbnail (safe image)
-    const thumbUrl = "https://i.imgur.com/9QZ7K6x.jpg";
-    const thumbRes = await axios.get(thumbUrl, { responseType: "arraybuffer" });
-    const thumbnail = Buffer.from(thumbRes.data);
-
-    // Send document with thumbnail
-    await conn.sendMessage(from, {
-      document: fs.readFileSync(filePath),
-      mimetype: "application/vnd.android.package-archive",
-      fileName: "Fouad_WhatsApp_MOD.apk",
-      jpegThumbnail: thumbnail,
-      caption:
+        // ✅ Send APK as DOCUMENT
+        await conn.sendMessage(from, {
+            document: fs.readFileSync(filePath),
+            mimetype: "application/vnd.android.package-archive",
+            fileName: "Fouad_WhatsApp_MOD.apk",
+            jpegThumbnail: thumb.data,
+            caption:
 `📦 *Fouad WhatsApp MOD*
 ⚡ Fast Document Send
-👨‍💻 API: @Arslan-MD
 
 ⚠️ Install at your own risk`
-    }, { quoted: mek });
+        }, { quoted: mek });
 
-    fs.unlinkSync(filePath);
+        fs.unlinkSync(filePath);
 
-  } catch (e) {
-    console.log(e);
-    reply("❌ *Error aa gaya, dobara try karo*");
-  }
+        await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
+
+    } catch (err) {
+        console.log("MODWA ERROR:", err);
+        reply("❌ Bhai APK send nahi ho saki, baad mein try karo");
+        await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
+    }
 });
