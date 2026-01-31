@@ -7,7 +7,6 @@ const AXIOS = axios.create({
     headers: { 'User-Agent': 'Mozilla/5.0' }
 });
 
-// 🔹 WORKING ARSLAN API
 async function fetchVideo(url) {
     const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(url)}`;
     const res = await AXIOS.get(api);
@@ -34,7 +33,7 @@ cmd({
         if (args.length < 2)
             return reply("❌ Use: .drama video <name>  OR  .drama doc <name>");
 
-        const mode = args[0].toLowerCase(); // video | doc
+        const mode = args[0].toLowerCase();
         const query = args.slice(1).join(" ");
 
         await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
@@ -50,24 +49,8 @@ cmd({
 
         const data = await fetchVideo(video.url);
 
-        // 🔹 Step 1: Thumbnail first with drama style
-        await conn.sendMessage(from, {
-            image: { url: data.thumb },
-            caption: `🎭 Drama Preview: *${data.title}*`,
-            contextInfo: {
-                externalAdReply: {
-                    title: data.title,
-                    body: "Drama / YouTube",
-                    thumbnailUrl: data.thumb,
-                    sourceUrl: video.url,
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-        }, { quoted: mek });
-
-        // 🔹 Step 2: Details text
-        const captionDetails =
+        // 🔹 Caption / Details + Thumbnail in one
+        const caption =
 `┌─⭓ *🎬 Drama Details* ⭓
 │
 │ 🎬 Title: ${data.title}
@@ -75,35 +58,43 @@ cmd({
 │ 📥 Mode: ${mode === "doc" ? "Document" : "Video"}
 │
 └─────────────
-© Powered by Boss-MD`;
+© Presented by YourName`;
 
-        await conn.sendMessage(from, { text: captionDetails }, { quoted: mek });
-
-        // 🔹 Step 3: Video / Document
         const messageData = mode === "doc"
             ? {
                 document: { url: data.url },
                 mimetype: "video/mp4",
-                fileName: `${data.title}.mp4`
+                fileName: `${data.title}.mp4`,
+                caption,
+                contextInfo: {
+                    externalAdReply: {
+                        title: data.title,
+                        body: "Drama / YouTube",
+                        thumbnailUrl: data.thumb,
+                        sourceUrl: video.url,
+                        mediaType: 1,
+                        renderLargerThumbnail: true
+                    }
+                }
             }
             : {
                 video: { url: data.url },
-                mimetype: "video/mp4"
+                mimetype: "video/mp4",
+                caption,
+                contextInfo: {
+                    externalAdReply: {
+                        title: data.title,
+                        body: "Drama / YouTube",
+                        thumbnailUrl: data.thumb,
+                        sourceUrl: video.url,
+                        mediaType: 1,
+                        renderLargerThumbnail: true
+                    }
+                }
             };
 
-        await conn.sendMessage(from, {
-            ...messageData,
-            contextInfo: {
-                externalAdReply: {
-                    title: data.title,
-                    body: "Drama / YouTube",
-                    thumbnailUrl: data.thumb,
-                    sourceUrl: video.url,
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-        }, { quoted: mek });
+        // 🔹 Send **one clean message**
+        await conn.sendMessage(from, messageData, { quoted: mek });
 
         await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
 
