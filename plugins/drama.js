@@ -50,19 +50,36 @@ cmd({
 
         const data = await fetchVideo(video.url);
 
-        const caption =
-`┌─⭓ *🎭 Drama Alert* ⭓
+        // 🔹 Step 1: Thumbnail first with drama style
+        await conn.sendMessage(from, {
+            image: { url: data.thumb },
+            caption: `🎭 Drama Preview: *${data.title}*`,
+            contextInfo: {
+                externalAdReply: {
+                    title: data.title,
+                    body: "Drama / YouTube",
+                    thumbnailUrl: data.thumb,
+                    sourceUrl: video.url,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
+
+        // 🔹 Step 2: Details text
+        const captionDetails =
+`┌─⭓ *🎬 Drama Details* ⭓
 │
-│ 🎬 *${data.title}*
+│ 🎬 Title: ${data.title}
 │ 🎞 Quality: ${data.quality}
 │ 📥 Mode: ${mode === "doc" ? "Document" : "Video"}
 │
 └─────────────
 © Powered by Boss-MD`;
 
-        // Send **details first as text** for speed
-        await conn.sendMessage(from, { text: caption }, { quoted: mek });
+        await conn.sendMessage(from, { text: captionDetails }, { quoted: mek });
 
+        // 🔹 Step 3: Video / Document
         const messageData = mode === "doc"
             ? {
                 document: { url: data.url },
@@ -74,7 +91,6 @@ cmd({
                 mimetype: "video/mp4"
             };
 
-        // Then send **video/document with thumbnail / ad reply**
         await conn.sendMessage(from, {
             ...messageData,
             contextInfo: {
