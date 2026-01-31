@@ -118,11 +118,11 @@ ${"═".repeat(35)}
 • 🔄 Keep updated with latest commits!
 
 ⚡ *POWERED BY:* ${botName}
-🎯 *ULTRA ENHANCED REPO COMMAND*`;
+🎯 *REPO COMMAND*`;
 
         // Send image with enhanced caption
         await conn.sendMessage(from, {
-            image: { url: `https://files.catbox.moe/87emth.jpg` },
+            image: { url: `https://files.catbox.moe/wcro3e.jpg` },
             caption: formattedInfo,
             contextInfo: {
                 mentionedJid: [sender],
