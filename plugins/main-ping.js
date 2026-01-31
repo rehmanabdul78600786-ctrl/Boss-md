@@ -374,7 +374,7 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
         // await reply("⚡ Checking speed...");
 
         // TikTok video buffer
-        const videoBuffer = await getVideoBuffer(
+        const gifBuffer = await getVideoBuffer(
             "https://files.catbox.moe/vpar3s.mp4"
         );
 
