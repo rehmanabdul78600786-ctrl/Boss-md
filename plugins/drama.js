@@ -2,161 +2,100 @@ const { cmd } = require('../command');
 const axios = require('axios');
 const yts = require('yt-search');
 
-const AXIOS_DEFAULTS = {
+const AXIOS = axios.create({
     timeout: 60000,
-    headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/plain, */*'
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+});
+
+// 🔹 WORKING ARSLAN API
+async function fetchVideo(url) {
+    const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(url)}`;
+    const res = await AXIOS.get(api);
+
+    if (
+        res.data?.status &&
+        res.data?.result?.status &&
+        res.data?.result?.download?.url
+    ) {
+        return {
+            url: res.data.result.download.url,
+            title: res.data.result.metadata.title,
+            thumb: res.data.result.metadata.thumbnail,
+            quality: res.data.result.download.quality || "720p"
+        };
     }
-};
-
-// NEW WORKING APIS
-const VIDEO_APIS = [
-    {
-        name: "API 1",
-        getUrl: (videoId) => `https://ytdl.raghavendraochi.workers.dev/api/youtube?url=https://www.youtube.com/watch?v=${videoId}&quality=720`
-    },
-    {
-        name: "API 2", 
-        getUrl: (videoId) => `https://youtube-video-download-info.p.rapidapi.com/dl?id=${videoId}`
-    },
-    {
-        name: "API 3",
-        getUrl: (videoId) => `https://yt-api.p.riteshw.workers.dev/dl?id=${videoId}`
-    },
-    {
-        name: "API 4 (Arslan)",
-        getUrl: (videoId, youtubeUrl) => `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(youtubeUrl)}`
-    }
-];
-
-async function getVideoDownloadUrl(youtubeUrl, videoId) {
-    for (let api of VIDEO_APIS) {
-        try {
-            const apiUrl = api.getUrl(videoId, youtubeUrl);
-            console.log(`Trying ${api.name}: ${apiUrl}`);
-
-            const response = await axios.get(apiUrl, AXIOS_DEFAULTS);
-
-            if (response.data) {
-
-                // 🔹 Arslan API FIX
-                if (response.data.status && response.data.data?.download) {
-                    const dl = response.data.data.download;
-                    return {
-                        download: typeof dl === "string" ? dl : dl.url,
-                        title: response.data.data.title || "Video"
-                    };
-                }
-
-                // 🔹 Existing formats (unchanged)
-                if (response.data.download && response.data.download.includes('.mp4')) {
-                    return { 
-                        download: response.data.download,
-                        title: response.data.title || "Video"
-                    };
-                }
-
-                if (response.data.result && response.data.result.download) {
-                    return { 
-                        download: response.data.result.download,
-                        title: response.data.result.title || "Video"
-                    };
-                }
-
-                if (response.data.links && response.data.links[0]?.url) {
-                    return { 
-                        download: response.data.links[0].url,
-                        title: response.data.title || "Video"
-                    };
-                }
-            }
-        } catch (error) {
-            console.log(`${api.name} failed: ${error.message}`);
-            continue;
-        }
-    }
-    throw new Error('All video APIs failed');
+    throw new Error("API failed");
 }
 
 cmd({
     pattern: "drama",
-    alias: ["darama"],
-    desc: "Download drama or YouTube video as document",
-    category: "download",
     react: "🎬",
+    desc: "Drama / YouTube download (video or document)",
+    category: "download",
     filename: __filename
-}, async (sock, message, args) => {
+}, async (conn, mek, m, { from, args, reply }) => {
     try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        const query = text.split(' ').slice(1).join(' ').trim();
+        if (args.length < 2)
+            return reply("❌ Use: .drama video <name>  OR  .drama doc <name>");
 
-        if (!query) {
-            await sock.sendMessage(message.chat, { 
-                text: "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ⚠️ *Please provide a drama name*\n│ 💡 Example: .drama drama name\n└─────────────" 
-            }, { quoted: message });
-            return;
-        }
+        const mode = args[0].toLowerCase(); // video | doc
+        const query = args.slice(1).join(" ");
 
-        let videoUrl = "";
-        let videoInfo = {};
+        await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
-        // Send processing message
-        await sock.sendMessage(message.chat, { 
-            text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🔍 *Searching for video...*\n│ 📝 *Query:* ${query}\n└─────────────` 
-        }, { quoted: message });
-
-        if (query.startsWith('http://') || query.startsWith('https://')) {
-            videoUrl = query;
-            const urlMatch = query.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            videoInfo.videoId = urlMatch ? urlMatch[1] : null;
+        let video;
+        if (query.startsWith("http")) {
+            video = { url: query };
         } else {
-            const { videos } = await yts(query);
-            if (!videos || videos.length === 0) {
-                await sock.sendMessage(message.chat, { 
-                    text: "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *No videos found!*\n│ 💡 Try different keywords\n└─────────────" 
-                }, { quoted: message });
-                return;
+            const search = await yts(query);
+            if (!search.videos.length) return reply("❌ No result found");
+            video = search.videos[0];
+        }
+
+        const data = await fetchVideo(video.url);
+
+        const caption =
+`┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓
+│
+│ 🎬 *${data.title}*
+│ 🎞 Quality: ${data.quality}
+│ 📥 Mode: ${mode === "doc" ? "Document" : "Video"}
+│
+└─────────────
+© Powered by Arslan-MD`;
+
+        const messageData = mode === "doc"
+            ? {
+                document: { url: data.url },
+                mimetype: "video/mp4",
+                fileName: `${data.title}.mp4`,
+                caption
             }
-            videoInfo = videos[0];
-            videoUrl = videoInfo.url;
-            videoInfo.videoId = videoInfo.videoId;
-        }
+            : {
+                video: { url: data.url },
+                mimetype: "video/mp4",
+                caption
+            };
 
-        if (!videoInfo.videoId) {
-            await sock.sendMessage(message.chat, { 
-                text: "┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Invalid YouTube URL*\n│ 💡 Provide valid YouTube link\n└─────────────" 
-            }, { quoted: message });
-            return;
-        }
+        await conn.sendMessage(from, {
+            ...messageData,
+            contextInfo: {
+                externalAdReply: {
+                    title: data.title,
+                    body: "YouTube Video",
+                    thumbnailUrl: data.thumb,
+                    sourceUrl: video.url,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
 
-        const title = videoInfo.title || "YouTube Video";
-        const views = videoInfo.views ? videoInfo.views.toLocaleString() : "N/A";
-        const author = videoInfo.author?.name || "Unknown";
-        const duration = videoInfo.timestamp || "Unknown";
-        const thumb = videoInfo.thumbnail;
+        await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
 
-        await sock.sendMessage(message.chat, {
-            image: { url: thumb },
-            caption: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ 🎬 *${title}*\n│ ⏱ *Duration:* ${duration}\n│ 👁 *Views:* ${views}\n│ 👤 *Channel:* ${author}\n│ 📥 *Finding download link...*\n└─────────────\n\n*© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ꧁𓊈𒆜 𝑩𝒐𝒔𝒔-𝒎𝒅 𒆜𓊉꧂*`
-        }, { quoted: message });
-
-        const videoData = await getVideoDownloadUrl(videoUrl, videoInfo.videoId);
-
-        await sock.sendMessage(message.chat, { 
-            text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ✅ *Video Found!*\n│ 🎬 *Title:* ${videoData.title || title}\n│ 📦 *Sending as document...*\n└─────────────` 
-        }, { quoted: message });
-
-        await sock.sendMessage(message.chat, {
-            document: { url: videoData.download },
-            mimetype: 'video/mp4',
-            fileName: `${(videoData.title || title).substring(0, 100)}.mp4`
-        }, { quoted: message });
-
-    } catch (error) {
-        console.error('[DRAMA CMD ERROR]', error?.message || error);
-        await sock.sendMessage(message.chat, { 
-            text: `┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓\n│\n│ ❌ *Download failed!*\n│ 💡 Error: ${error?.message || 'Unknown error'}\n└─────────────` 
-        }, { quoted: message });
+    } catch (e) {
+        console.log(e);
+        reply("❌ Bhai download nahi ho saka");
+        await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
     }
 });
