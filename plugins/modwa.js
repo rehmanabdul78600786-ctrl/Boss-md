@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 cmd({
-  pattern: "mod",
+  pattern: "modwa",
   desc: "Download & send MOD WhatsApp APK with thumbnail",
   category: "downloader",
   filename: __filename
