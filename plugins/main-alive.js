@@ -80,7 +80,7 @@ ${timeEmoji} *${greeting}, ${pushname || "User"}!*
         await conn.sendMessage(from, {
             video: { url: "https://files.catbox.moe/uraa69.mp4" }, // ✅ Working video
             caption: statusMessage,
-            gifPlayback: false,
+            gifPlayback: true,
             contextInfo: {
                 mentionedJid: [sender],
                 externalAdReply: {
