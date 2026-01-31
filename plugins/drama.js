@@ -12,11 +12,7 @@ async function fetchVideo(url) {
     const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(url)}`;
     const res = await AXIOS.get(api);
 
-    if (
-        res.data?.status &&
-        res.data?.result?.status &&
-        res.data?.result?.download?.url
-    ) {
+    if (res.data?.status && res.data?.result?.status && res.data?.result?.download?.url) {
         return {
             url: res.data.result.download.url,
             title: res.data.result.metadata.title,
@@ -55,7 +51,7 @@ cmd({
         const data = await fetchVideo(video.url);
 
         const caption =
-`┌─⭓ *𝘽𝙊𝙎𝙎-𝙈𝘿* ⭓
+`┌─⭓ *🎭 Drama Alert* ⭓
 │
 │ 🎬 *${data.title}*
 │ 🎞 Quality: ${data.quality}
@@ -64,25 +60,27 @@ cmd({
 └─────────────
 © Powered by Boss-MD`;
 
+        // Send **details first as text** for speed
+        await conn.sendMessage(from, { text: caption }, { quoted: mek });
+
         const messageData = mode === "doc"
             ? {
                 document: { url: data.url },
                 mimetype: "video/mp4",
-                fileName: `${data.title}.mp4`,
-                caption
+                fileName: `${data.title}.mp4`
             }
             : {
                 video: { url: data.url },
-                mimetype: "video/mp4",
-                caption
+                mimetype: "video/mp4"
             };
 
+        // Then send **video/document with thumbnail / ad reply**
         await conn.sendMessage(from, {
             ...messageData,
             contextInfo: {
                 externalAdReply: {
                     title: data.title,
-                    body: "YouTube Video",
+                    body: "Drama / YouTube",
                     thumbnailUrl: data.thumb,
                     sourceUrl: video.url,
                     mediaType: 1,
