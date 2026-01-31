@@ -420,31 +420,50 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
 // SIMPLE PONG COMMAND (Your original simple ping)
 cmd({
     pattern: "ping",
-    alias: ["simpleping", "sp"],
-    desc: "Simple ping response.",
+    alias: ["pong", "speed", "test"],
+    desc: "Check bot response speed and status",
     category: "main",
-    react: "🏓",
+    react: "⚡",
     filename: __filename
 },
-async (conn, mek, m, { from, sender, reply, pushname }) => {
+async (conn, mek, m, { from, reply, pushname }) => {
     try {
-        const startTime = Date.now();
+        const start = Date.now();
+        const initialMsg = await reply(`_Pinging chapri..._`);
         
-        // Get random bot name
-        const botName = getRandomBotName();
+        const end = Date.now();
+        const ping = end - start;
+        const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
         
-        const message = await reply(`*${botName} chloye oing huny dy...*`);
+        // Smart status based on ping
+        let status = "✅ Excellent";
+        let emoji = "⚡";
         
-        const endTime = Date.now();
-        const ping = endTime - startTime;
+        if (ping > 200) {
+            status = "🚀 Good";
+            emoji = "🚀";
+        }
+        if (ping > 500) {
+            status = "⚠️ Slow";
+            emoji = "🐢";
+        }
         
         await conn.sendMessage(from, { 
-            text: `*🏓 ${botName} Ping : ${ping}ms*` 
-        }, { quoted: message });
+            text: `
+${emoji} *BOT STATUS REPORT* ${emoji}
+
+🏓 Response Time: *${ping}ms*
+🧠 Memory Usage: *${memory}MB*
+📊 Status: *${status}*
+
+👤 User: ${pushname || "User"}
+🎯 Prefix: ${config.PREFIX || "."}
+            ` 
+        }, { quoted: initialMsg });
         
     } catch (e) {
-        console.log(e);
-        reply(`${e}`);
+        console.error("Ping error:", e);
+        reply("❌ Could not check status");
     }
 });
 
