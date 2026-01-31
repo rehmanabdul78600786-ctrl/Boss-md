@@ -13,7 +13,7 @@ cmd({
 }, async (conn, mek, m, { from, args, reply }) => {
     try {
         const query = args.join(" ");
-        if (!query) return reply("❌ Bhai song name likho agy hi sb chapri ha ap f a hu gya ap bi na bnu chaprio ky baap");
+        if (!query) return reply("❌ Bhai song name likho bhai ap ko aql mnd smja tha likn ap bi chapri hi hu Mubarak hu bhai");
 
         await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
