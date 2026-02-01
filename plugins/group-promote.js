@@ -11,26 +11,27 @@ cmd({
 async (conn, mek, m) => {
     try {
         if (!m.isGroup) return m.reply("❌ This command only works in groups!");
-        
+
         // Fetch group metadata
         let groupInfo = await conn.groupMetadata(m.chat).catch(() => null);
         if (!groupInfo) return m.reply("❌ Failed to fetch group info.");
 
         // Get group admins
         const groupAdmins = groupInfo.participants
-            .filter(p => p.admin || p.admin === 'superadmin') // include owner
+            .filter(p => p.admin) // only admins
             .map(p => p.id);
 
-        // Clean sender number for comparison
-        const senderNum = m.sender.split('@')[0];
+        // Owner of the group
+        const ownerId = groupInfo.owner;
 
-        if (!groupAdmins.includes(m.sender)) {
+        // Sender check: admin or owner
+        if (!(groupAdmins.includes(m.sender) || m.sender === ownerId)) {
             return m.reply("❌ Only admins or the group owner can promote members!");
         }
 
         // Bot admin check
-        const botNumber = conn.user.id.split(":")[0] + "@s.whatsapp.net";
-        if (!groupAdmins.includes(botNumber)) {
+        const botId = conn.user.id.split(":")[0] + "@s.whatsapp.net";
+        if (!groupAdmins.includes(botId)) {
             return m.reply("❌ I need to be an admin to promote members!");
         }
 
@@ -45,7 +46,7 @@ async (conn, mek, m) => {
         }
 
         // Check if target is already admin
-        if (groupAdmins.includes(target)) {
+        if (groupAdmins.includes(target) || target === ownerId) {
             return m.reply("⚠️ This user is already an admin!");
         }
 
@@ -53,8 +54,8 @@ async (conn, mek, m) => {
         await conn.groupParticipantsUpdate(m.chat, [target], "promote");
 
         // Success message
-        m.reply(`✅ @${target.split('@')[0]} has been promoted to admin!`, { 
-            mentions: [target] 
+        m.reply(`✅ @${target.split('@')[0]} has been promoted to admin!`, {
+            mentions: [target]
         });
 
     } catch (error) {
