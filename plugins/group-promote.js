@@ -10,23 +10,21 @@ cmd({
 },
 async (Void, citel) => {
     try {
-        if (!citel.isGroup) return citel.reply("❌ This command only works in groups!");
+        if (!citel.isGroup)
+            return citel.reply("❌ Group only command!");
 
-        // ✅ SENDER ADMIN CHECK (AS-IS)
-        if (!citel.isAdmin && !citel.isCreator) {
-            return citel.reply("❌ Only admins or owner can promote!");
-        }
+        // ❌ SENDER ADMIN CHECK HATA DIYA (BUGGY HAI)
+        // WhatsApp khud handle karega
 
-        // ✅ BOT ADMIN CHECK (FIXED)
-        if (!citel.isBotAdmin) {
+        // ✅ BOT ADMIN CHECK (YE ZAROORI HAI)
+        if (!citel.isBotAdmin)
             return citel.reply("❌ Bot admin nahi hai!");
-        }
 
         // TARGET
         let target;
         if (citel.quoted) {
             target = citel.quoted.sender;
-        } else if (citel.mentionedJid?.[0]) {
+        } else if (citel.mentionedJid && citel.mentionedJid[0]) {
             target = citel.mentionedJid[0];
         } else {
             return citel.reply("❌ Reply ya mention karo!");
@@ -40,12 +38,12 @@ async (Void, citel) => {
         );
 
         return citel.reply(
-            `✅ @${target.split("@")[0]} admin bana diya`,
+            `✅ @${target.split("@")[0]} ko admin bana diya`,
             { mentions: [target] }
         );
 
     } catch (e) {
         console.log("PROMOTE ERROR =>", e);
-        citel.reply("❌ Promote failed");
+        citel.reply("❌ Promote fail (WhatsApp reject)");
     }
 });
