@@ -1,4 +1,6 @@
-const { cmd } = require('../command');
+const config = require('../config')
+const { cmd, commands } = require('../command')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions')
 
 cmd({
     pattern: "tagall",
@@ -8,72 +10,46 @@ cmd({
     category: "group",
     use: '.tagall [message]',
     filename: __filename
-}, 
-async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, args }) => {
+},
+async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAdmins, prefix, command, args, body }) => {
     try {
         if (!isGroup) return reply("❌ This command can only be used in groups.");
+        
+        const botOwner = conn.user.id.split(":")[0]; // Extract bot owner's number
+        const senderJid = senderNumber + "@s.whatsapp.net";
 
-        // === Helper: Format JID properly ===
-        const getJid = (jid) => {
-            if (!jid) return null;
-            let clean = jid.split(':')[0];
-            if (!clean.includes('@')) clean += '@s.whatsapp.net';
-            else if (clean.includes('@c.us')) clean = clean.replace('@c.us', '@s.whatsapp.net');
-            else if (!clean.includes('@s.whatsapp.net')) clean = clean.split('@')[0] + '@s.whatsapp.net';
-            return clean;
-        };
-
-        // Bot JID
-        const botJid = getJid(conn.user?.jid || conn.user?.id);
-        if (!botJid) return reply("❌ Could not identify bot JID.");
-
-        // Sender JID
-        const senderJid = getJid(senderNumber || m?.sender || mek?.sender);
-        if (!senderJid) return reply("❌ Could not identify sender JID.");
-
-        // === Get group metadata ===
-        const groupInfo = await conn.groupMetadata(from);
-        const groupName = groupInfo.subject || "Unknown Group";
-        const allParticipants = groupInfo.participants || participants || [];
-
-        // Get admins
-        const allAdmins = allParticipants
-            .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-            .map(p => getJid(p.id));
-
-        // === Permission checks ===
-        if (!allAdmins.includes(senderJid)) return reply("❌ Only group admins can use this command.");
-        if (!allAdmins.includes(botJid)) return reply(`❌ I need to be an admin to tag everyone.\n*Promote me first!*`);
-
-        if (!allParticipants || allParticipants.length === 0) return reply("❌ No members found in this group.");
-
-        // === Build message ===
-        const emojis = ['📢', '🔊', '🌐', '🔰', '❤‍🩹', '🤍', '🖤', '🩵', '📝', '💗', '🔖', '🪩', '📦', '🎉', '🛡️', '💸', '⏳', '🗿', '🚀', '🎧', '🪀', '⚡', '🚩', '🍁', '🗣️', '👻', '⚠️', '🔥'];
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-        const message = args.join(" ").trim() || "Attention Everyone!";
-
-        let teks = `▢ *Group* : ${groupName}\n`;
-        teks += `▢ *Members* : ${allParticipants.length}\n`;
-        teks += `▢ *Message* : ${message}\n\n`;
-        teks += "┌───⊷ *MENTIONS*\n";
-
-        const validParticipants = [];
-        for (let mem of allParticipants) {
-            if (!mem?.id) continue;
-            const memberJid = getJid(mem.id);
-            if (!memberJid) continue;
-            teks += `│ ${randomEmoji} @${memberJid.split("@")[0]}\n`;
-            validParticipants.push(memberJid);
+        if (!groupAdmins.includes(senderJid) && senderNumber !== botOwner) {
+            return reply("❌ Only group admins or the bot owner can use this command.");
         }
 
-        if (validParticipants.length === 0) return reply("❌ No valid members to tag.");
-        teks += "└──✪ BOSS ┃ 𝐌𝐃 ✪──";
+        // Ensure group metadata is fetched properly
+        let groupInfo = await conn.groupMetadata(from).catch(() => null);
+        if (!groupInfo) return reply("❌ Failed to fetch group information.");
 
-        // === Send message with mentions ===
-        await conn.sendMessage(from, { text: teks, mentions: validParticipants }, { quoted: mek });
+        let groupName = groupInfo.subject || "Unknown Group";
+        let totalMembers = participants ? participants.length : 0;
+        if (totalMembers === 0) return reply("❌ No members found in this group.");
 
-    } catch (error) {
-        console.error("TagAll Error:", error);
-        reply(`❌ Error: ${error.message || "Unknown error occurred"}`);
+        let emojis = ['📢', '🔊', '🌐', '🔰', '❤‍🩹', '🤍', '🖤', '🩵', '📝', '💗', '🔖', '🪩', '📦', '🎉', '🛡️', '💸', '⏳', '🗿', '🚀', '🎧', '🪀', '⚡', '🚩', '🍁', '🗣️', '👻', '⚠️', '🔥'];
+        let randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        // Proper message extraction
+        let message = body.slice(body.indexOf(command) + command.length).trim();
+        if (!message) message = "Attention Everyone"; // Default message
+
+        let teks = `▢ Group : *${groupName}*\n▢ Members : *${totalMembers}*\n▢ Message: *${message}*\n\n┌───⊷ *MENTIONS*\n`;
+
+        for (let mem of participants) {
+            if (!mem.id) continue; // Prevent undefined errors
+            teks += `${randomEmoji} @${mem.id.split('@')[0]}\n`;
+        }
+
+        teks += "└──✪ 𝘽𝙊𝙎𝙎 ┃ 𝐌𝐃 ✪──";
+
+        conn.sendMessage(from, { text: teks, mentions: participants.map(a => a.id) }, { quoted: mek });
+
+    } catch (e) {
+        console.error("TagAll Error:", e);
+        reply(`❌ *Error Occurred !!*\n\n${e.message || e}`);
     }
 });
