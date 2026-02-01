@@ -1,70 +1,62 @@
-const { cmd } = require('../command');
+const { cmd } = require('../command')
 
 cmd({
     pattern: "promote",
     alias: ["p", "makeadmin"],
-    desc: "Promotes a member to group admin",
+    desc: "Promote a member to admin",
     category: "admin",
     react: "⬆️",
     filename: __filename
-},
-async (conn, mek, m) => {
+}, async (conn, mek, m, { isGroup, participants }) => {
     try {
-        if (!m.isGroup) return m.reply("❌ This command only works in groups!");
+        if (!isGroup) return m.reply("❌ Group only command")
 
-        // Fetch group metadata
-        const groupInfo = await conn.groupMetadata(m.chat);
-        if (!groupInfo) return m.reply("❌ Failed to fetch group info.");
+        const metadata = await conn.groupMetadata(m.chat)
 
-        // Owner ID
-        const ownerId = groupInfo.owner.split(':')[0] + "@s.whatsapp.net";
+        // BOT ADMIN CHECK (REAL)
+        const botJid = conn.user.id.split(':')[0] + "@s.whatsapp.net"
+        const botIsAdmin = metadata.participants.find(
+            p => p.id === botJid && p.admin
+        )
+        if (!botIsAdmin) return m.reply("❌ Bot admin nahi hai")
 
-        // Group admins (number-only format)
-        const groupAdmins = groupInfo.participants
-            .filter(p => p.admin)
-            .map(p => p.id.split(':')[0] + "@s.whatsapp.net");
-
-        // Sender ID (number-only)
-        const senderId = m.sender.split(':')[0] + "@s.whatsapp.net";
-
-        // Check if sender is admin or owner
-        if (!(groupAdmins.includes(senderId) || senderId === ownerId)) {
-            return m.reply("❌ Only admins or the group owner can promote members!");
+        // SENDER ADMIN OR OWNER CHECK
+        const senderIsAdmin = metadata.participants.find(
+            p => p.id === m.sender && p.admin
+        )
+        if (!senderIsAdmin && m.sender !== metadata.owner) {
+            return m.reply("❌ Sirf admin ya owner promote kar sakta hai")
         }
 
-        // Bot admin check (number-only)
-        const botId = conn.user.id.split(':')[0] + "@s.whatsapp.net";
-        if (!groupAdmins.includes(botId)) {
-            return m.reply("❌ I need to be an admin to promote members!");
-        }
-
-        // Get target user
-        let target;
+        // TARGET
+        let target
         if (m.quoted) {
-            target = m.quoted.sender;
-        } else if (m.mentionedJid && m.mentionedJid[0]) {
-            target = m.mentionedJid[0];
+            target = m.quoted.sender
+        } else if (m.mentionedJid?.[0]) {
+            target = m.mentionedJid[0]
         } else {
-            return m.reply("❌ Please reply to a message or mention a user!");
+            return m.reply("❌ Reply ya mention karo")
         }
 
-        const targetId = target.split(':')[0] + "@s.whatsapp.net";
+        // Already admin?
+        const alreadyAdmin = metadata.participants.find(
+            p => p.id === target && p.admin
+        )
+        if (alreadyAdmin) return m.reply("⚠️ Ye banda pehle hi admin hai")
 
-        // Check if target is already admin
-        if (groupAdmins.includes(targetId) || targetId === ownerId) {
-            return m.reply("⚠️ This user is already an admin!");
-        }
+        // 🔥 PROMOTE (REAL CALL)
+        await conn.groupParticipantsUpdate(
+            m.chat,
+            [target],
+            "promote"
+        )
 
-        // Promote the user
-        await conn.groupParticipantsUpdate(m.chat, [targetId], "promote");
+        await m.reply(`✅ @${target.split("@")[0]} promoted`, {
+            mentions: [target]
+        })
 
-        // Success message
-        m.reply(`✅ @${targetId.split('@')[0]} has been promoted to admin!`, {
-            mentions: [targetId]
-        });
-
-    } catch (error) {
-        console.error("Promote Error:", error);
-        m.reply("❌ Failed to promote user. Please try again.");
+    } catch (err) {
+        console.log("PROMOTE ERROR =>", err)
+        m.reply("❌ Promote fail — WhatsApp ne reject kar diya")
     }
-});
+})
