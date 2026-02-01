@@ -10,22 +10,26 @@ cmd({
 },
 async (conn, mek, m, {
     from,
-    isGroup,
     sender,
     botNumber,
     botNumber2,
-    groupAdmins,
-    isAdmins,
+    groupMetadata,
     reply
 }) => {
 
     // ✅ group check
-    if (!isGroup) return reply("❌ This command works only in groups.");
+    if (!m.isGroup) return reply("❌ This command works only in groups.");
 
-    // ✅ user admin check
-    if (!isAdmins) return reply("❌ Only group admins can use this command.");
+    const participants = groupMetadata.participants || [];
+    const groupAdmins = participants.filter(p => p.admin).map(p => p.id);
 
-    // ✅ REAL bot admin check (FIXED)
+    // ✅ check if sender is admin (fixed)
+    const senderJid = sender;
+    if (!groupAdmins.includes(senderJid)) {
+        return reply("❌ Only group admins can use this command.");
+    }
+
+    // ✅ check if bot is admin
     const botJid = botNumber2 || (botNumber + "@s.whatsapp.net");
     if (!groupAdmins.includes(botJid)) {
         return reply("❌ Mujhe pehle admin bnao.");
@@ -46,14 +50,14 @@ async (conn, mek, m, {
         return reply("❌ Reply, mention ya number do.");
     }
 
-    // ❌ bot self demote block
-    if (number === botNumber) {
+    const jid = number + "@s.whatsapp.net";
+
+    // ❌ prevent demoting bot itself
+    if (jid === botJid) {
         return reply("❌ Main khud ko demote nahi kar sakta.");
     }
 
-    const jid = number + "@s.whatsapp.net";
-
-    // ❌ target must be admin
+    // ❌ check target is admin
     if (!groupAdmins.includes(jid)) {
         return reply("❌ Ye banda admin nahi hai.");
     }
