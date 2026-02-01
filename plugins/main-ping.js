@@ -374,7 +374,7 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
         // await reply("⚡ Checking speed...");
 
         // TikTok video buffer
-        const gifBuffer = await getVideoBuffer(
+        const videoBuffer = await getVideoBuffer(
             "https://files.catbox.moe/vpar3s.mp4"
         );
 
@@ -419,7 +419,7 @@ ${responseTime < 0.1 ? "⭐⭐⭐⭐⭐ ELITE" :
 
 // SIMPLE PONG COMMAND (Your original simple ping)
 cmd({
-    pattern: "ping",
+    pattern: "ping1",
     alias: ["pong", "speed", "test"],
     desc: "Check bot response speed and status",
     category: "main",
