@@ -1,6 +1,6 @@
 const config = require('../config')
 const { cmd, commands } = require('../command')
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('../lib/functions')
 
 cmd({
     pattern: "tagall",
@@ -15,14 +15,23 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
     try {
         if (!isGroup) return reply("❌ This command can only be used in groups.");
         
-        const botOwner = conn.user.id.split(":")[0]; // Extract bot owner's number
-        const senderJid = senderNumber + "@s.whatsapp.net";
+        const botOwner = conn.user.id.split(":")[0]; // Bot owner number
+        const botNumber = conn.user.id.split(":")[0]; // Bot number
+        const senderNum = senderNumber.replace(/[^0-9]/g, ''); // Clean sender number
 
-        if (!groupAdmins.includes(senderJid) && senderNumber !== botOwner) {
+        // Clean admin list for proper comparison
+        const cleanGroupAdmins = groupAdmins.map(jid => jid.split('@')[0]);
+
+        // Check if sender is admin or bot owner
+        if (!cleanGroupAdmins.includes(senderNum) && senderNum !== botOwner) {
             return reply("❌ Only group admins or the bot owner can use this command.");
         }
 
-        // Ensure group metadata is fetched properly
+        // Check if bot itself is admin
+        const botIsAdmin = cleanGroupAdmins.includes(botNumber);
+        if (!botIsAdmin) return reply("❌ I need to be an admin to tag everyone.");
+
+        // Fetch group info
         let groupInfo = await conn.groupMetadata(from).catch(() => null);
         if (!groupInfo) return reply("❌ Failed to fetch group information.");
 
@@ -30,10 +39,11 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
         let totalMembers = participants ? participants.length : 0;
         if (totalMembers === 0) return reply("❌ No members found in this group.");
 
+        // Random emojis
         let emojis = ['📢', '🔊', '🌐', '🔰', '❤‍🩹', '🤍', '🖤', '🩵', '📝', '💗', '🔖', '🪩', '📦', '🎉', '🛡️', '💸', '⏳', '🗿', '🚀', '🎧', '🪀', '⚡', '🚩', '🍁', '🗣️', '👻', '⚠️', '🔥'];
         let randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
 
-        // Proper message extraction
+        // Extract message
         let message = body.slice(body.indexOf(command) + command.length).trim();
         if (!message) message = "Attention Everyone"; // Default message
 
@@ -53,4 +63,3 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
         reply(`❌ *Error Occurred !!*\n\n${e.message || e}`);
     }
 });
-
