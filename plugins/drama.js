@@ -58,7 +58,7 @@ cmd({
 │ 📥 Mode: ${mode === "doc" ? "Document" : "Video"}
 │
 └─────────────
-© Presented by YourName`;
+© Presented by 𝐁𝐎𝐒𝐒-𝐌𝐃`;
 
         const messageData = mode === "doc"
             ? {
