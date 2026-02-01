@@ -15,19 +15,17 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
     try {
         if (!isGroup) return reply("❌ This command can only be used in groups.");
 
-        // Bot & sender numbers (with proper format)
-        const botNumber = conn.user.jid; // Bot number
-        const senderNum = senderNumber.includes("@") ? senderNumber : senderNumber + "@s.whatsapp.net"; // Sender number full JID
+        // Bot & sender numbers fixed
+        const botNumber = conn.user.jid.split(":")[0] + "@s.whatsapp.net";
+        const senderNum = senderNumber.split(":")[0] + "@s.whatsapp.net";
 
-        // Clean admin list for comparison
-        const cleanGroupAdmins = groupAdmins.map(jid => jid.includes("@") ? jid : jid + "@s.whatsapp.net");
+        // Clean admin list
+        const cleanGroupAdmins = groupAdmins.map(jid => jid.split(":")[0] + "@s.whatsapp.net");
 
         // Check if sender is admin
-        if (!cleanGroupAdmins.includes(senderNum)) {
-            return reply("❌ Only group admins can use this command.");
-        }
+        if (!cleanGroupAdmins.includes(senderNum)) return reply("❌ Only group admins can use this command.");
 
-        // Check if bot itself is admin
+        // Check if bot is admin
         if (!cleanGroupAdmins.includes(botNumber)) return reply("❌ I need to be an admin to tag everyone.");
 
         // Fetch group info safely
@@ -40,9 +38,9 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
         let emojis = ['📢', '🔊', '🌐', '🔰', '❤‍🩹', '🤍', '🖤', '🩵', '📝', '💗', '🔖', '🪩', '📦', '🎉', '🛡️', '💸', '⏳', '🗿', '🚀', '🎧', '🪀', '⚡', '🚩', '🍁', '🗣️', '👻', '⚠️', '🔥'];
         let randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
 
-        // Extract message
-        let message = body.slice(body.indexOf(command) + command.length).trim();
-        if (!message) message = "Attention Everyone"; // Default message
+        // Extract message safely
+        let message = body ? body.slice(body.indexOf(command) + command.length).trim() : "Attention Everyone";
+        if (!message) message = "Attention Everyone";
 
         // Build tag text
         let teks = `▢ Group : *${groupName}*\n▢ Members : *${totalMembers}*\n▢ Message: *${message}*\n\n┌───⊷ *MENTIONS*\n`;
