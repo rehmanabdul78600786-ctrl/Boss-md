@@ -16,7 +16,7 @@ cmd({
 }, async (conn, mek, m, { from, args, reply }) => {
     try {
         const query = args.join(" ");
-        if (!query) return reply("❌ Please Provide Me A song Query or Link");
+        if (!query) return reply("❌ Please Provide Me A song Query or Link bot chlana ata nai or command dy rhy hu");
 
         await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
