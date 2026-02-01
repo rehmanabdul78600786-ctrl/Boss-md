@@ -13,14 +13,10 @@ async (Void, citel) => {
         if (!citel.isGroup)
             return citel.reply("❌ Group only command!");
 
-        // ❌ SENDER ADMIN CHECK HATA DIYA (BUGGY HAI)
+        // ❌ NO admin check
+        // ❌ NO bot admin check
         // WhatsApp khud handle karega
 
-        // ✅ BOT ADMIN CHECK (YE ZAROORI HAI)
-        if (!citel.isBotAdmin)
-            return citel.reply("❌ Bot admin nahi hai!");
-
-        // TARGET
         let target;
         if (citel.quoted) {
             target = citel.quoted.sender;
@@ -30,7 +26,6 @@ async (Void, citel) => {
             return citel.reply("❌ Reply ya mention karo!");
         }
 
-        // PROMOTE
         await Void.groupParticipantsUpdate(
             citel.chat,
             [target],
@@ -38,12 +33,12 @@ async (Void, citel) => {
         );
 
         return citel.reply(
-            `✅ @${target.split("@")[0]} ko admin bana diya`,
+            `✅ @${target.split("@")[0]} admin bana diya`,
             { mentions: [target] }
         );
 
     } catch (e) {
         console.log("PROMOTE ERROR =>", e);
-        citel.reply("❌ Promote fail (WhatsApp reject)");
+        citel.reply("❌ Promote fail (WhatsApp ne reject kar diya)");
     }
 });
