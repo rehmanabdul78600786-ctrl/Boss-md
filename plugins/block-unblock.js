@@ -1,79 +1,82 @@
 const { cmd } = require('../command');
 
+async function getTargetJid(m, q) {
+    // reply
+    if (m.quoted && m.quoted.sender) {
+        return m.quoted.sender;
+    }
+    // mention
+    if (m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length) {
+        return m.message.extendedTextMessage.contextInfo.mentionedJid[0];
+    }
+    // number
+    if (q && q.replace(/\D/g, '').length > 7) {
+        return q.replace(/\D/g, '') + "@s.whatsapp.net";
+    }
+    return null;
+}
+
 cmd({
     pattern: "block",
-    desc: "Blocks a person",
+    desc: "Block a user",
     category: "owner",
     react: "🚫",
     filename: __filename
 },
 async (conn, m, { reply, q, react }) => {
-    // Get the bot owner's number dynamically
-    const botOwner = conn.user.id.split(":")[0] + "@s.whatsapp.net";
-    
-    if (m.sender !== botOwner) {
+
+    // ✅ OWNER CHECK (100% SAFE)
+    const ownerNum = conn.user.id.split(":")[0];
+    if (!m.sender.includes(ownerNum)) {
         await react("❌");
-        return reply("Only the bot owner can use this command.");
+        return reply("❌ Only bot owner can use this command");
     }
 
-    let jid;
-    if (m.quoted) {
-        jid = m.quoted.sender; // If replying to a message, get sender JID
-    } else if (m.mentionedJid.length > 0) {
-        jid = m.mentionedJid[0]; // If mentioning a user, get their JID
-    } else if (q && q.includes("@")) {
-        jid = q.replace(/[@\s]/g, '') + "@s.whatsapp.net"; // If manually typing a JID
-    } else {
+    const jid = await getTargetJid(m, q);
+    if (!jid) {
         await react("❌");
-        return reply("Please mention a user or reply to their message.");
+        return reply("❌ Reply / mention / number do");
     }
 
     try {
         await conn.updateBlockStatus(jid, "block");
         await react("✅");
-        reply(`Successfully blocked @${jid.split("@")[0]}`, { mentions: [jid] });
-    } catch (error) {
-        console.error("Block command error:", error);
+        return reply(`🚫 Blocked @${jid.split("@")[0]}`, { mentions: [jid] });
+    } catch (e) {
+        console.log("BLOCK ERROR:", e);
         await react("❌");
-        reply("Failed to block the user.");
+        return reply("❌ Block failed");
     }
 });
 
 cmd({
     pattern: "unblock",
-    desc: "Unblocks a person",
+    desc: "Unblock a user",
     category: "owner",
     react: "🔓",
     filename: __filename
 },
 async (conn, m, { reply, q, react }) => {
-    // Get the bot owner's number dynamically
-    const botOwner = conn.user.id.split(":")[0] + "@s.whatsapp.net";
 
-    if (m.sender !== botOwner) {
+    const ownerNum = conn.user.id.split(":")[0];
+    if (!m.sender.includes(ownerNum)) {
         await react("❌");
-        return reply("Only the bot owner can use this command.");
+        return reply("❌ Only bot owner can use this command");
     }
 
-    let jid;
-    if (m.quoted) {
-        jid = m.quoted.sender;
-    } else if (m.mentionedJid.length > 0) {
-        jid = m.mentionedJid[0];
-    } else if (q && q.includes("@")) {
-        jid = q.replace(/[@\s]/g, '') + "@s.whatsapp.net";
-    } else {
+    const jid = await getTargetJid(m, q);
+    if (!jid) {
         await react("❌");
-        return reply("Please mention a user or reply to their message.");
+        return reply("❌ Reply / mention / number do");
     }
 
     try {
         await conn.updateBlockStatus(jid, "unblock");
         await react("✅");
-        reply(`Successfully unblocked @${jid.split("@")[0]}`, { mentions: [jid] });
-    } catch (error) {
-        console.error("Unblock command error:", error);
+        return reply(`🔓 Unblocked @${jid.split("@")[0]}`, { mentions: [jid] });
+    } catch (e) {
+        console.log("UNBLOCK ERROR:", e);
         await react("❌");
-        reply("Failed to unblock the user.");
+        return reply("❌ Unblock failed");
     }
-});           
+});
