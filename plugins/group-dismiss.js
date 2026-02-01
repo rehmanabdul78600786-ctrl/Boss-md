@@ -14,53 +14,45 @@ async (conn, mek, m, {
     botNumber,
     botNumber2,
     groupMetadata,
+    isCreator,
     reply
 }) => {
 
-    // ✅ group check
     if (!m.isGroup) return reply("❌ This command works only in groups.");
 
-    const participants = groupMetadata.participants || [];
+    const participants = groupMetadata?.participants || [];
     const groupAdmins = participants.filter(p => p.admin).map(p => p.id);
+    const ownerJid = groupMetadata?.owner || "";
 
-    // ✅ check if sender is admin (fixed)
-    const senderJid = sender;
-    if (!groupAdmins.includes(senderJid)) {
-        return reply("❌ Only group admins can use this command.");
-    }
-
-    // ✅ check if bot is admin
     const botJid = botNumber2 || (botNumber + "@s.whatsapp.net");
-    if (!groupAdmins.includes(botJid)) {
-        return reply("❌ Mujhe pehle admin bnao.");
-    }
+
+    // ✅ owner or group creator bypass
+    const senderJid = sender;
+    const senderIsAdmin = groupAdmins.includes(senderJid) || isCreator || senderJid === ownerJid;
+
+    if (!senderIsAdmin) return reply("❌ Only group admins can use this command.");
+
+    // ✅ check bot admin
+    if (!groupAdmins.includes(botJid)) return reply("❌ Mujhe pehle admin bnao.");
 
     // ✅ get target safely
     let number;
-    if (m.quoted && m.quoted.sender) {
-        number = m.quoted.sender.split("@")[0];
-    } 
+    if (m.quoted && m.quoted.sender) number = m.quoted.sender.split("@")[0];
     else if (m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length) {
         number = m.message.extendedTextMessage.contextInfo.mentionedJid[0].split("@")[0];
-    } 
+    }
     else if (m.text && m.text.replace(/\D/g, '').length > 7) {
         number = m.text.replace(/\D/g, '');
-    } 
-    else {
-        return reply("❌ Reply, mention ya number do.");
     }
+    else return reply("❌ Reply, mention ya number do.");
 
     const jid = number + "@s.whatsapp.net";
 
     // ❌ prevent demoting bot itself
-    if (jid === botJid) {
-        return reply("❌ Main khud ko demote nahi kar sakta.");
-    }
+    if (jid === botJid) return reply("❌ Main khud ko demote nahi kar sakta.");
 
-    // ❌ check target is admin
-    if (!groupAdmins.includes(jid)) {
-        return reply("❌ Ye banda admin nahi hai.");
-    }
+    // ❌ target must be admin
+    if (!groupAdmins.includes(jid)) return reply("❌ Ye banda admin nahi hai.");
 
     try {
         await conn.groupParticipantsUpdate(from, [jid], "demote");
