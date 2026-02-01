@@ -16,12 +16,10 @@ async (conn, mek, m) => {
         let groupInfo = await conn.groupMetadata(m.chat).catch(() => null);
         if (!groupInfo) return m.reply("❌ Failed to fetch group info.");
 
-        // Get group admins
         const groupAdmins = groupInfo.participants
             .filter(p => p.admin) // only admins
             .map(p => p.id);
 
-        // Owner of the group
         const ownerId = groupInfo.owner;
 
         // Sender check: admin or owner
@@ -29,9 +27,11 @@ async (conn, mek, m) => {
             return m.reply("❌ Only admins or the group owner can promote members!");
         }
 
-        // Bot admin check
-        const botId = conn.user.id.split(":")[0] + "@s.whatsapp.net";
-        if (!groupAdmins.includes(botId)) {
+        // Bot admin check (ignore if bot is actually admin, bypassing false negative)
+        const botId = conn.user.jid || conn.user.id; 
+        // Force botId to match any format
+        let botIsAdmin = groupAdmins.find(a => a.split(':')[0] === botId.split(':')[0]);
+        if (!botIsAdmin) {
             return m.reply("❌ I need to be an admin to promote members!");
         }
 
