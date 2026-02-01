@@ -8,37 +8,61 @@ cmd({
     react: "⬇️",
     filename: __filename
 },
-async(conn, mek, m, {
-    from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isCreator, isDev, isAdmins, reply
+async (conn, mek, m, {
+    from,
+    isGroup,
+    sender,
+    botNumber,
+    botNumber2,
+    groupAdmins,
+    isAdmins,
+    reply
 }) => {
-    // Check if the command is used in a group
-    if (!isGroup) return reply("❌ This command can only be used in groups.");
 
-    // Check if the user is an admin
+    // ✅ group check
+    if (!isGroup) return reply("❌ This command works only in groups.");
+
+    // ✅ user admin check
     if (!isAdmins) return reply("❌ Only group admins can use this command.");
 
-    // Check if the bot is an admin
-    if (!isBotAdmins) return reply("❌ I need to be an admin to use this command.");
-
-    let number;
-    if (m.quoted) {
-        number = m.quoted.sender.split("@")[0]; // If replying to a message, get the sender's number
-    } else if (q && q.includes("@")) {
-        number = q.replace(/[@\s]/g, ''); // If manually typing a number
-    } else {
-        return reply("❌ Please reply to a message or provide a number to demote.");
+    // ✅ REAL bot admin check (FIXED)
+    const botJid = botNumber2 || (botNumber + "@s.whatsapp.net");
+    if (!groupAdmins.includes(botJid)) {
+        return reply("❌ Mujhe pehle admin bnao.");
     }
 
-    // Prevent demoting the bot itself
-    if (number === botNumber) return reply("❌ The bot cannot demote itself.");
+    // ✅ get target safely
+    let number;
+    if (m.quoted && m.quoted.sender) {
+        number = m.quoted.sender.split("@")[0];
+    } 
+    else if (m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length) {
+        number = m.message.extendedTextMessage.contextInfo.mentionedJid[0].split("@")[0];
+    } 
+    else if (m.text && m.text.replace(/\D/g, '').length > 7) {
+        number = m.text.replace(/\D/g, '');
+    } 
+    else {
+        return reply("❌ Reply, mention ya number do.");
+    }
+
+    // ❌ bot self demote block
+    if (number === botNumber) {
+        return reply("❌ Main khud ko demote nahi kar sakta.");
+    }
 
     const jid = number + "@s.whatsapp.net";
 
+    // ❌ target must be admin
+    if (!groupAdmins.includes(jid)) {
+        return reply("❌ Ye banda admin nahi hai.");
+    }
+
     try {
         await conn.groupParticipantsUpdate(from, [jid], "demote");
-        reply(`✅ Successfully demoted @${number} to a normal member.`, { mentions: [jid] });
-    } catch (error) {
-        console.error("Demote command error:", error);
-        reply("❌ Failed to demote the member.");
+        reply(`✅ Successfully demoted @${number}`, { mentions: [jid] });
+    } catch (e) {
+        console.log("DEMOTE ERROR:", e);
+        reply("❌ Demote failed.");
     }
 });
