@@ -13,25 +13,28 @@ async (conn, mek, m) => {
         if (!m.isGroup) return m.reply("❌ This command only works in groups!");
 
         // Fetch group metadata
-        let groupInfo = await conn.groupMetadata(m.chat).catch(() => null);
+        const groupInfo = await conn.groupMetadata(m.chat);
         if (!groupInfo) return m.reply("❌ Failed to fetch group info.");
 
+        // Owner ID
+        const ownerId = groupInfo.owner.split(':')[0] + "@s.whatsapp.net";
+
+        // Group admins (number-only format)
         const groupAdmins = groupInfo.participants
-            .filter(p => p.admin) // only admins
-            .map(p => p.id);
+            .filter(p => p.admin)
+            .map(p => p.id.split(':')[0] + "@s.whatsapp.net");
 
-        const ownerId = groupInfo.owner;
+        // Sender ID (number-only)
+        const senderId = m.sender.split(':')[0] + "@s.whatsapp.net";
 
-        // Sender check: admin or owner
-        if (!(groupAdmins.includes(m.sender) || m.sender === ownerId)) {
+        // Check if sender is admin or owner
+        if (!(groupAdmins.includes(senderId) || senderId === ownerId)) {
             return m.reply("❌ Only admins or the group owner can promote members!");
         }
 
-        // Bot admin check (ignore if bot is actually admin, bypassing false negative)
-        const botId = conn.user.jid || conn.user.id; 
-        // Force botId to match any format
-        let botIsAdmin = groupAdmins.find(a => a.split(':')[0] === botId.split(':')[0]);
-        if (!botIsAdmin) {
+        // Bot admin check (number-only)
+        const botId = conn.user.id.split(':')[0] + "@s.whatsapp.net";
+        if (!groupAdmins.includes(botId)) {
             return m.reply("❌ I need to be an admin to promote members!");
         }
 
@@ -45,17 +48,19 @@ async (conn, mek, m) => {
             return m.reply("❌ Please reply to a message or mention a user!");
         }
 
+        const targetId = target.split(':')[0] + "@s.whatsapp.net";
+
         // Check if target is already admin
-        if (groupAdmins.includes(target) || target === ownerId) {
+        if (groupAdmins.includes(targetId) || targetId === ownerId) {
             return m.reply("⚠️ This user is already an admin!");
         }
 
         // Promote the user
-        await conn.groupParticipantsUpdate(m.chat, [target], "promote");
+        await conn.groupParticipantsUpdate(m.chat, [targetId], "promote");
 
         // Success message
-        m.reply(`✅ @${target.split('@')[0]} has been promoted to admin!`, {
-            mentions: [target]
+        m.reply(`✅ @${targetId.split('@')[0]} has been promoted to admin!`, {
+            mentions: [targetId]
         });
 
     } catch (error) {
