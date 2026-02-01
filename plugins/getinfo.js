@@ -189,7 +189,7 @@ cmd({
     filename: __filename
 }, async (conn, mek, m, { reply }) => {
     const start = Date.now();
-    await reply("🏓 Pinging...");
+    //await reply("🏓 Pinging...");
     const speed = Date.now() - start;
     reply(`⚡ Speed: ${speed}ms`);
 });
