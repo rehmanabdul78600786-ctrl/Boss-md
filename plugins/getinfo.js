@@ -1,450 +1,197 @@
 const { cmd } = require('../command');
 const os = require('os');
-const fs = require('fs');
-const { exec } = require('child_process');
-const axios = require('axios');
+const config = require('../config');
 
 cmd({
     pattern: "getinfo",
-    alias: ["info", "status", "botinfo", "myinfo"],
-    desc: "Get detailed information about user, group, bot or server",
+    alias: ["info", "botinfo"],
+    desc: "Get user / group / bot / server info",
     category: "tools",
     react: "📊",
-    filename: __filename,
-    use: ".getinfo [user/group/bot/server] OR reply to message"
+    filename: __filename
 }, async (conn, mek, m, { from, reply, text, quoted, pushName, mentioned, isGroup, sender }) => {
     try {
-        const args = text.toLowerCase().split(' ');
-        const option = args[0] || 'user';
-        
-        // Show processing
+        const option = text?.toLowerCase() || "user";
+
         await conn.sendMessage(from, {
             react: { text: "⏳", key: mek.key }
         });
-        
-        // ==================== USER INFO ====================
-        if (option === 'user' || option === 'me' || option === 'myinfo') {
-            let targetUser = sender;
-            let targetName = pushName;
-            
-            // If mentioned someone
-            if (mentioned && mentioned.length > 0) {
-                targetUser = mentioned[0];
-                try {
-                    const contact = await conn.contactById(targetUser);
-                    targetName = contact?.name || contact?.pushname || "Unknown";
-                } catch (e) {
-                    targetName = "User";
-                }
+
+        /* ================= USER INFO ================= */
+        if (option === "user" || option === "me") {
+
+            let target = sender;
+            let name = pushName || "User";
+
+            if (mentioned?.length) {
+                target = mentioned[0];
+                name = "Mentioned User";
+            } else if (quoted?.sender) {
+                target = quoted.sender;
+                name = "Quoted User";
             }
-            // If quoted message
-            else if (quoted && quoted.sender) {
-                targetUser = quoted.sender;
-                try {
-                    const contact = await conn.contactById(targetUser);
-                    targetName = contact?.name || contact?.pushname || "Unknown";
-                } catch (e) {
-                    targetName = "User";
-                }
-            }
-            
-            const userId = targetUser.split('@')[0];
-            const timestamp = new Date().toLocaleString();
-            
-            // Try to get profile picture
-            let profilePic = null;
+
+            const id = target.split("@")[0];
+
+            let pp;
             try {
-                profilePic = await conn.profilePictureUrl(targetUser, 'image');
-            } catch (e) {
-                profilePic = null;
+                pp = await conn.profilePictureUrl(target, "image");
+            } catch {
+                pp = null;
             }
-            
-            // Get user status
-            let userStatus = "Unknown";
-            try {
-                const status = await conn.fetchStatus(targetUser);
-                userStatus = status?.status || "Not set";
-            } catch (e) {
-                userStatus = "Not available";
-            }
-            
-            const userInfo = `
-📊 *USER INFORMATION*
 
-👤 *Basic Info:*
-• Name: ${targetName}
-• ID: ${userId}
-• JID: ${targetUser}
-• Status: ${userStatus}
+            const msg = `
+👤 *USER INFORMATION*
 
-📱 *Platform:*
-• WhatsApp: ✅ Connected
-• Type: ${targetUser.includes('@s.whatsapp.net') ? 'Personal' : 'Business'}
-• Verified: ${targetUser.includes(':') ? 'Yes' : 'No'}
+📛 Name: ${name}
+🆔 Number: ${id}
+🔗 JID: ${target}
+💬 Chat: ${isGroup ? "Group" : "Private"}
+📱 WhatsApp: Active
+🕒 Time: ${new Date().toLocaleString()}
 
-🕒 *Session:*
-• Time: ${timestamp}
-• Chat Type: ${isGroup ? 'Group' : 'Private'}
-• Message ID: ${mek.key.id?.substring(0, 10)}...
+🔐 Privacy:
+• Profile Pic: ${pp ? "Visible" : "Hidden"}
+• Status: Protected
 
-📈 *Stats:*
-• Messages Sent: Available
-• Last Seen: Active now
-• Online Status: ✅ Connected
+⚠️ Note: Limited by privacy settings
+`;
 
-🔐 *Privacy:*
-• Profile Picture: ${profilePic ? 'Visible' : 'Hidden'}
-• Status: ${userStatus !== 'Not available' ? 'Visible' : 'Hidden'}
-• Last Seen: Visible
-
-💎 *Additional:*
-• User since: Unknown
-• Device: WhatsApp Web
-• Location: Not tracked
-
-📌 *Note:* Information depends on user's privacy settings`;
-
-            // Send with or without profile picture
-            if (profilePic) {
+            if (pp) {
                 await conn.sendMessage(from, {
-                    image: { url: profilePic },
-                    caption: userInfo,
-                    mentions: [targetUser]
+                    image: { url: pp },
+                    caption: msg,
+                    mentions: [target]
                 }, { quoted: mek });
             } else {
-                await conn.sendMessage(from, {
-                    text: userInfo,
-                    mentions: [targetUser]
-                }, { quoted: mek });
+                await reply(msg);
             }
         }
-        
-        // ==================== GROUP INFO ====================
-        else if (option === 'group' || option === 'gc') {
-            if (!isGroup) {
-                return reply("❌ This command only works in groups!");
-            }
-            
-            const metadata = await conn.groupMetadata(from);
-            const participants = metadata.participants;
-            const admins = participants.filter(p => p.admin).map(p => p.id);
-            
-            // Group creation date
-            const creationDate = metadata.creation ? new Date(metadata.creation * 1000).toLocaleDateString() : "Unknown";
-            
-            // Get group picture
-            let groupPic = null;
+
+        /* ================= GROUP INFO ================= */
+        else if (option === "group" || option === "gc") {
+            if (!isGroup) return reply("❌ Group only command");
+
+            const meta = await conn.groupMetadata(from);
+            const admins = meta.participants.filter(p => p.admin).map(p => p.id);
+
+            let gpp;
             try {
-                groupPic = await conn.profilePictureUrl(from, 'image');
-            } catch (e) {
-                groupPic = null;
+                gpp = await conn.profilePictureUrl(from, "image");
+            } catch {
+                gpp = null;
             }
-            
-            const groupInfo = `
+
+            const msg = `
 👥 *GROUP INFORMATION*
 
-📛 *Basic Details:*
-• Name: ${metadata.subject}
-• ID: ${from}
-• Created: ${creationDate}
-• Owner: @${metadata.owner?.split('@')[0] || "Unknown"}
+📛 Name: ${meta.subject}
+👤 Owner: @${meta.owner?.split("@")[0] || "Unknown"}
+👥 Members: ${meta.participants.length}
+🛡 Admins: ${admins.length}
+📅 Created: ${new Date(meta.creation * 1000).toLocaleDateString()}
 
-👥 *Members:*
-• Total: ${participants.length}
-• Admins: ${admins.length}
-• Users: ${participants.length - admins.length}
+⚙️ Settings:
+• Announce: ${meta.announce ? "On" : "Off"}
+• Restricted: ${meta.restrict ? "Yes" : "No"}
 
-⚙️ *Settings:*
-• Description: ${metadata.desc || "No description"}
-• Announcement: ${metadata.announce ? "Enabled" : "Disabled"}
-• Restricted: ${metadata.restrict ? "Yes" : "No"}
-• Ephemeral: ${metadata.ephemeralDuration ? `${metadata.ephemeralDuration}s` : "Disabled"}
+🤖 Bot: ${config.BOT_NAME}
+`;
 
-📊 *Statistics:*
-• Message Count: Unknown
-• Active Users: ${participants.length}
-• Bots: 1 (${config?.BOT_NAME || "BOSS-MD"})
-
-🔧 *Features:*
-• Group Invite: ✅
-• Media Sharing: ✅
-• Admin Tools: ✅
-• Bot Commands: ✅
-
-📌 *Admin List:* ${admins.slice(0, 5).map(id => `@${id.split('@')[0]}`).join(', ')}${admins.length > 5 ? ` and ${admins.length - 5} more` : ''}
-
-⚠️ *Note:* Some features depend on group settings`;
-
-            if (groupPic) {
+            if (gpp) {
                 await conn.sendMessage(from, {
-                    image: { url: groupPic },
-                    caption: groupInfo,
-                    mentions: admins.slice(0, 10)
+                    image: { url: gpp },
+                    caption: msg,
+                    mentions: admins
                 }, { quoted: mek });
             } else {
-                await conn.sendMessage(from, {
-                    text: groupInfo,
-                    mentions: admins.slice(0, 10)
-                }, { quoted: mek });
+                await reply(msg);
             }
         }
-        
-        // ==================== BOT INFO ====================
-        else if (option === 'bot' || option === 'botinfo') {
-            const botUptime = process.uptime();
-            const days = Math.floor(botUptime / (3600 * 24));
-            const hours = Math.floor((botUptime % (3600 * 24)) / 3600);
-            const minutes = Math.floor((botUptime % 3600) / 60);
-            const seconds = Math.floor(botUptime % 60);
-            
-            const uptimeText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-            
-            // Memory usage
-            const used = process.memoryUsage();
-            const heapUsed = Math.round(used.heapUsed / 1024 / 1024);
-            const heapTotal = Math.round(used.heapTotal / 1024 / 1024);
-            
-            // Count commands
-            const commands = require('../command').commands || {};
-            const totalCommands = Object.keys(commands).length;
-            
-            const botInfo = `
+
+        /* ================= BOT INFO ================= */
+        else if (option === "bot") {
+
+            const up = process.uptime();
+            const h = Math.floor(up / 3600);
+            const mnt = Math.floor((up % 3600) / 60);
+
+            const mem = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+
+            const msg = `
 🤖 *BOT INFORMATION*
 
-👑 *Owner:*
-• Name: ${config?.OWNER_NAME || "BOSS-MD"}
-• Number: ${config?.OWNER_NUMBER || "Not set"}
-• Contact: .owner
+📛 Name: ${config.BOT_NAME}
+👑 Owner: ${config.OWNER_NAME}
+⚙ Prefix: ${config.PREFIX}
+🌍 Mode: ${config.WORK_TYPE}
 
-⚙️ *Configuration:*
-• Prefix: ${config?.PREFIX || "."}
-• Name: ${config?.BOT_NAME || "BOSS-MD"}
-• Mode: ${config?.WORK_TYPE || "public"}
-• Platform: Heroku/Node.js
+⏱ Uptime: ${h}h ${mnt}m
+🧠 RAM: ${mem} MB
+🧩 Platform: Node.js
+📦 Library: Baileys
 
-📊 *Performance:*
-• Uptime: ${uptimeText}
-• Memory: ${heapUsed}MB / ${heapTotal}MB
-• Commands: ${totalCommands}+
-• Response: Fast
+✅ Status: Online
+`;
 
-🔧 *Technical:*
-• Platform: Node.js ${process.version}
-• Library: Baileys
-• Multi-Device: ✅ Yes
-• Auto-Restart: ✅ Enabled
-
-📈 *Statistics:*
-• Active Chats: Unknown
-• Messages Processed: Unknown
-• Commands Used: Unknown
-• Error Rate: Low
-
-🎯 *Features:*
-• Media Download: ✅
-• AI Chat: ✅
-• Group Management: ✅
-• Fun Commands: ✅
-• Utilities: ✅
-
-💡 *Quick Commands:*
-• .ping - Check response
-• .runtime - Uptime
-• .menu - All commands
-• .owner - Contact`;
-
-            await conn.sendMessage(from, {
-                text: botInfo,
-                contextInfo: {
-                    externalAdReply: {
-                        title: "🤖 BOSS-MD BOT",
-                        body: `Uptime: ${uptimeText}`,
-                        thumbnailUrl: "https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png",
-                        sourceUrl: "https://github.com/boss-md",
-                        mediaType: 1
-                    }
-                }
-            }, { quoted: mek });
+            await reply(msg);
         }
-        
-        // ==================== SERVER INFO ====================
-        else if (option === 'server' || option === 'sys' || option === 'system') {
-            // System information
-            const platform = os.platform();
-            const arch = os.arch();
-            const cpus = os.cpus().length;
-            const totalMem = Math.round(os.totalmem() / (1024 * 1024 * 1024));
-            const freeMem = Math.round(os.freemem() / (1024 * 1024 * 1024));
-            const usedMem = totalMem - freeMem;
-            
-            // Node.js info
-            const nodeVersion = process.version;
-            const v8Version = process.versions.v8;
-            
-            // Uptime
-            const sysUptime = os.uptime();
-            const sysDays = Math.floor(sysUptime / (3600 * 24));
-            const sysHours = Math.floor((sysUptime % (3600 * 24)) / 3600);
-            
-            // Bot process info
-            const botUptime = process.uptime();
-            const botDays = Math.floor(botUptime / (3600 * 24));
-            const botHours = Math.floor((botUptime % (3600 * 24)) / 3600);
-            
-            // Network info
-            const networkInterfaces = os.networkInterfaces();
-            const ipAddress = Object.values(networkInterfaces)
-                .flat()
-                .find(i => i.family === 'IPv4' && !i.internal)?.address || "127.0.0.1";
-            
-            const serverInfo = `
-🖥️ *SERVER INFORMATION*
 
-💻 *Hardware:*
-• Platform: ${platform} ${arch}
-• CPUs: ${cpus} cores
-• Memory: ${usedMem}GB / ${totalMem}GB
-• Uptime: ${sysDays}d ${sysHours}h
+        /* ================= SERVER INFO ================= */
+        else if (option === "server" || option === "sys") {
 
-⚙️ *Software:*
-• Node.js: ${nodeVersion}
-• V8 Engine: ${v8Version}
-• OS: ${os.type()} ${os.release()}
-• Arch: ${arch}
+            const total = Math.round(os.totalmem() / 1024 / 1024 / 1024);
+            const free = Math.round(os.freemem() / 1024 / 1024 / 1024);
 
-🤖 *Bot Process:*
-• Uptime: ${botDays}d ${botHours}h
-• PID: ${process.pid}
-• Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-• Platform: ${process.platform}
+            const msg = `
+🖥 *SERVER INFO*
 
-🌐 *Network:*
-• IP: ${ipAddress}
-• Hostname: ${os.hostname()}
-• Interfaces: ${Object.keys(networkInterfaces).length}
+💻 OS: ${os.type()} ${os.release()}
+⚙ Arch: ${os.arch()}
+🧠 RAM: ${total - free}GB / ${total}GB
+🖥 CPU: ${os.cpus().length} Cores
+⏱ Uptime: ${Math.floor(os.uptime() / 3600)}h
 
-📊 *Load Average:* ${os.loadavg().map(l => l.toFixed(2)).join(', ')}
+🌐 Host: ${os.hostname()}
+`;
 
-📈 *Statistics:*
-• CPU Load: Medium
-• Memory Usage: ${Math.round((usedMem / totalMem) * 100)}%
-• Disk Space: Unknown
-• Network: Stable
-
-⚠️ *Warnings:* ${usedMem > totalMem * 0.8 ? 'High memory usage!' : 'None'}
-
-🔍 *Quick Checks:*
-• Server: ✅ Online
-• Database: ❌ Not connected
-• APIs: ✅ Working
-• WhatsApp: ✅ Connected`;
-
-            await conn.sendMessage(from, {
-                text: serverInfo
-            }, { quoted: mek });
+            await reply(msg);
         }
-        
-        // ==================== HELP ====================
+
         else {
-            const helpText = `
-📊 *GETINFO COMMAND*
+            await reply(`
+📊 *GETINFO HELP*
 
-🔍 *Usage:*
-• .getinfo user - Your information
-• .getinfo user @mention - Someone's info
-• .getinfo group - Group information
-• .getinfo bot - Bot information
-• .getinfo server - Server/system info
-
-🎯 *Examples:*
-• .getinfo (your info)
-• .getinfo @923001234567
-• .getinfo group (in group)
+• .getinfo
+• .getinfo user
+• .getinfo group
 • .getinfo bot
 • .getinfo server
-
-📌 *Note:* Some info depends on privacy settings`;
-
-            await reply(helpText);
+`);
         }
-        
-        // Success reaction
+
         await conn.sendMessage(from, {
             react: { text: "✅", key: mek.key }
         });
-        
-    } catch (error) {
-        console.error("Getinfo Error:", error);
-        await reply(`❌ Error: ${error.message}\n\nTry: .getinfo bot for basic info`);
+
+    } catch (e) {
+        console.log(e);
+        reply("❌ Error: " + e.message);
     }
 });
 
-// ==================== QUICK INFO COMMANDS ====================
+/* ========== QUICK STATUS ========== */
 cmd({
-    pattern: "myinfo",
-    alias: ["profile", "me"],
-    desc: "Quick personal information",
+    pattern: "ping",
+    desc: "Bot speed",
+    react: "🏓",
     category: "tools",
-    react: "👤",
     filename: __filename
-}, async (conn, mek, m, { from, pushName, sender }) => {
-    const userId = sender.split('@')[0];
-    const timestamp = new Date().toLocaleString();
-    
-    const myInfo = `
-👤 *YOUR INFORMATION*
-
-📛 *Name:* ${pushName || "Unknown"}
-🆔 *ID:* ${userId}
-📱 *Number:* ${userId}
-🕒 *Time:* ${timestamp}
-💬 *Chat:* ${m.isGroup ? 'Group' : 'Private'}
-
-📊 *Status:* Active
-🔐 *Privacy:* Standard
-📅 *Session:* New
-
-💡 *Tip:* Use .getinfo for detailed info`;
-
-    await conn.sendMessage(from, { text: myInfo }, { quoted: mek });
-});
-
-cmd({
-    pattern: "botstatus",
-    alias: ["status", "ping"],
-    desc: "Check bot status and response time",
-    category: "tools",
-    react: "📈",
-    filename: __filename
-}, async (conn, mek, m, { from, reply }) => {
+}, async (conn, mek, m, { reply }) => {
     const start = Date.now();
-    const pingMsg = await reply("🏓 Pinging...");
-    const latency = Date.now() - start;
-    
-    const botUptime = process.uptime();
-    const hours = Math.floor(botUptime / 3600);
-    const minutes = Math.floor((botUptime % 3600) / 60);
-    
-    const memory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-    
-    const status = `
-📊 *BOT STATUS*
-
-🏓 *Ping:* ${latency}ms
-⏱️ *Uptime:* ${hours}h ${minutes}m
-🧠 *Memory:* ${memory}MB
-📈 *Status:* ✅ Online
-⚡ *Speed:* ${latency < 500 ? 'Fast' : latency < 1000 ? 'Normal' : 'Slow'}
-
-🔧 *Services:*
-• WhatsApp: ✅ Connected
-• Commands: ✅ Working
-• APIs: ✅ Available
-• Database: ❌ Not connected
-
-💡 *Health:* Excellent`;
-
-    await conn.sendMessage(from, { text: status }, { quoted: mek });
+    await reply("🏓 Pinging...");
+    const speed = Date.now() - start;
+    reply(`⚡ Speed: ${speed}ms`);
 });
 
-console.log("📊 GetInfo Plugin Loaded!");
+console.log("✅ GetInfo Plugin Loaded Successfully");
