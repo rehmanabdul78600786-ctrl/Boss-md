@@ -1,24 +1,23 @@
-const fs = require('fs');
-const path = require('path');
 const fetch = require('node-fetch');
-const config = require('../config');    
 const { cmd } = require('../command');
 
-// 🔥 STYLISH BOT NAME SYSTEM
+// 🎭 STYLISH BOT NAME SYSTEM
 const botNameStyles = [
     "𝓑𝓞𝓢𝓢-𝓜𝓓", "𝐁𝐎𝐒𝐒-𝐌𝐃", "𝘽𝙊𝙎𝙎-𝙈𝘿", "𝗕𝗢𝗦𝗦-𝗠𝗗",
-    "ᗷOᔕᔕ-ᗰᗪ", "ＢＯＳＳ－ＭＤ", "🄱🄾🅂🅂-🄼🄳", "B⃟O⃟S⃟S⃟-⃟M⃟D⃟"
+    "ᗷOᔕᔕ-ᗰᗪ", "🄱🄾🅂🅂-🄼🄳", "B⃟O⃟S⃟S⃟-⃟M⃟D⃟", "ʙᴏꜱꜱ-ᴍᴅ"
 ];
 
 function getRandomBotName() {
     return botNameStyles[Math.floor(Math.random() * botNameStyles.length)];
 }
 
-let isRepoExecuting = false; // Prevent double execution
+// ⛔ GLOBAL LOCK TO PREVENT DUPLICATE
+let isRepoLocked = false;
+const REPO_LOCK_TIMEOUT = 5000; // 5 seconds lock
 
 cmd({
     pattern: "repo",
-    alias: ["sc", "script", "source", "github"],
+    alias: ["sc", "script", "source", "github", "code"],
     desc: "Get BOSS-MD repository information with stylish design",
     react: "📂",
     category: "info",
@@ -26,192 +25,248 @@ cmd({
 },
 async (conn, mek, m, { from, reply, sender, pushname }) => {
     try {
-        // 🔥 PREVENT DOUBLE EXECUTION
-        if (isRepoExecuting) {
+        // 🛑 CHECK AND SET LOCK
+        if (isRepoLocked) {
             await conn.sendMessage(from, {
-                react: { text: '❌', key: m.key }
+                react: { text: '🚫', key: m.key }
             });
-            return reply("📌 *Already processing...* Please wait!");
+            return reply("⏸️ *Command is locked!*\nPlease wait 5 seconds before trying again.");
         }
         
-        isRepoExecuting = true;
+        // 🔒 SET LOCK
+        isRepoLocked = true;
         
-        // Random bot name for this execution
+        // Auto-unlock after timeout
+        setTimeout(() => {
+            isRepoLocked = false;
+        }, REPO_LOCK_TIMEOUT);
+        
+        // 🎯 RANDOM BOT NAME
         const botName = getRandomBotName();
         
-        // Send processing reaction
+        // ⏳ SEND REACTION ONLY (NO MESSAGE)
         await conn.sendMessage(from, {
             react: { text: '⏳', key: m.key }
         });
         
+        // 🔗 GITHUB REPO DETAILS
         const githubRepoURL = 'https://github.com/bosstech-collab/Boss-md-';
-        
-        // Extract username and repo name
         const [, username, repoName] = githubRepoURL.match(/github\.com\/([^/]+)\/([^/]+)/) || ['', 'bosstech-collab', 'Boss-md-'];
         
-        // 📊 ULTRA STYLISH FORMAT
-        const stylishBorder = "═".repeat(35);
-        const stylishHeader = `
-╔${stylishBorder}╗
-║           📂 ${botName} 📂           ║
-╚${stylishBorder}╝`;
-        
-        // Send stylish header first
-        await conn.sendMessage(from, {
-            text: stylishHeader
-        }, { quoted: mek });
-        
-        // Fetch repository details
+        // 📊 FETCH REPO DATA
         const response = await fetch(`https://api.github.com/repos/${username}/${repoName}`, {
             timeout: 10000,
-            headers: { 'User-Agent': 'BOSS-MD-Bot' }
+            headers: { 
+                'User-Agent': 'BOSS-MD-Bot',
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
         
         if (!response.ok) {
-            throw new Error(`GitHub API request failed with status ${response.status}`);
+            throw new Error(`GitHub API failed (${response.status})`);
         }
-
+        
         const repoData = await response.json();
         
         // 🎨 ULTRA ENHANCED FORMAT
+        const borderLine = "═".repeat(34);
+        
         const formattedInfo = `
-${stylishHeader}
+╔${borderLine}╗
+║            📂 ${botName} 📂            ║
+╚${borderLine}╝
 
-📂 *REPOSITORY INFORMATION*
+📦 *REPOSITORY INFORMATION*
 
-┌─⭓ *Basic Details* ⭓
+┌─⭓ *Basic Details*
 │
-│ 📛 *Repository:* ${repoData.name}
-│ 👑 *Owner:* ${repoData.owner.login}
-│ 📝 *Description:* ${repoData.description || 'No description'}
-│ 🔗 *URL:* ${repoData.html_url}
+│ 📛 *Repository:* ${repoData.name || 'Boss-md-'}
+│ 👤 *Owner:* @${repoData.owner?.login || 'bosstech-collab'}
+│ 📝 *Description:* ${repoData.description || 'BOSS-MD WhatsApp Bot'}
+│ 🔗 *URL:* ${repoData.html_url || githubRepoURL}
 │
-├─⭓ *Statistics* ⭓
+├─⭓ *Statistics*
 │
-│ ⭐ *Stars:* ${repoData.stargazers_count}
-│ 🍴 *Forks:* ${repoData.forks_count}
-│ 👀 *Watchers:* ${repoData.watchers_count}
-│ 🏷️ *Language:* ${repoData.language || 'Not specified'}
+│ ⭐ *Stars:* ${repoData.stargazers_count || 0}
+│ 🍴 *Forks:* ${repoData.forks_count || 0}
+│ 👁️ *Watchers:* ${repoData.watchers_count || 0}
+│ 💻 *Language:* ${repoData.language || 'JavaScript'}
 │ 📅 *Created:* ${new Date(repoData.created_at).toLocaleDateString()}
 │ 🔄 *Updated:* ${new Date(repoData.updated_at).toLocaleDateString()}
 │
-├─⭓ *Additional Info* ⭓
+├─⭓ *Technical Info*
 │
-│ 📦 *Size:* ${(repoData.size / 1024).toFixed(2)} MB
-│ 📄 *Default Branch:* ${repoData.default_branch}
-│ 🔓 *Visibility:* ${repoData.private ? 'Private' : 'Public'}
-│ 🏠 *Homepage:* ${repoData.homepage || 'Not specified'}
+│ 📏 *Size:* ${(repoData.size / 1024).toFixed(2)} MB
+│ 🌿 *Branch:* ${repoData.default_branch || 'main'}
+│ 🔓 *Status:* ${repoData.private ? '🔒 Private' : '🔓 Public'}
+│ 📊 *Issues:* ${repoData.open_issues_count || 0} open
 │
-└─⭓ *User Info* ⭓
+└─⭓ *User Information*
+│
+│ 👤 *Requested by:* ${pushname || 'User'}
+│ 🆔 *User ID:* ${sender.split('@')[0]}
+│ 📱 *Platform:* WhatsApp
+│ ⏰ *Time:* ${new Date().toLocaleTimeString('en-US', { hour12: true })}
 
-👤 *Requested by:* ${pushname || 'User'}
-🆔 *User ID:* ${sender.split('@')[0]}
-📱 *Platform:* WhatsApp
-⏰ *Time:* ${new Date().toLocaleTimeString()}
-
-${"═".repeat(35)}
+${borderLine}
 
 💡 *IMPORTANT NOTES:*
-• ⭐ Don't forget to star the repository!
-• 🍴 Fork for customization!
-• 🐛 Report issues if found!
-• 🔄 Keep updated with latest commits!
+• ⭐ Star the repository for support
+• 🍴 Fork for customization
+• 🐛 Report issues on GitHub
+• 🔄 Keep your bot updated
+
+🎯 *COMMANDS RELATED:*
+• .alive - Check bot status
+• .menu - Show all commands
+• .help - Get help
 
 ⚡ *POWERED BY:* ${botName}
-🎯 *REPO COMMAND*`;
+🔧 *Professional WhatsApp Bot System*`.trim();
 
-        // Send image with enhanced caption
+        // 🖼️ SEND DIRECT IMAGE WITH CAPTION (NO SEPARATE MESSAGE)
         await conn.sendMessage(from, {
-            image: { url: `https://files.catbox.moe/wcro3e.jpg` },
+            image: { 
+                url: `https://files.catbox.moe/wcro3e.jpg` 
+            },
             caption: formattedInfo,
             contextInfo: {
                 mentionedJid: [sender],
                 externalAdReply: {
                     title: `📂 ${botName} Repository`,
-                    body: `GitHub • ${repoData.stargazers_count} Stars`,
+                    body: `GitHub • ${repoData.stargazers_count || 0} Stars • ${repoData.forks_count || 0} Forks`,
                     thumbnailUrl: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-                    sourceUrl: repoData.html_url,
+                    sourceUrl: repoData.html_url || githubRepoURL,
                     mediaType: 1,
-                    renderLargerThumbnail: true
+                    renderLargerThumbnail: false
                 }
             }
         }, { quoted: mek });
 
-        // Send audio (if exists)
-        try {
-            const audioPath = path.join(__dirname, '../assets/menu.m4a');
-            if (fs.existsSync(audioPath)) {
-                await conn.sendMessage(from, {
-                    audio: fs.readFileSync(audioPath),
-                    mimetype: 'audio/mp4',
-                    ptt: true
-                }, { quoted: mek });
-            }
-        } catch (audioError) {
-            console.log("Audio optional, continuing...");
-        }
-
-        // Success reaction
+        // ✅ SUCCESS REACTION (REPLACE LOADING)
         await conn.sendMessage(from, {
             react: { text: '✅', key: m.key }
         });
         
-        // Reset execution flag
-        setTimeout(() => { isRepoExecuting = false; }, 3000);
-        
     } catch (error) {
         console.error("Repo command error:", error);
         
-        // Error reaction
+        // ❌ ERROR REACTION
         await conn.sendMessage(from, {
             react: { text: '❌', key: m.key }
         });
         
         const botName = getRandomBotName();
         const errorMessage = `
-❌ *${botName} REPO ERROR*
+╔═══════════════════════════╗
+║       ❌ ${botName} ERROR       ║
+╚═══════════════════════════╝
 
-⚠️ *Issue:* Could not fetch repository information
+📛 *ISSUE:* Repository fetch failed
 
-🔧 *Possible Solutions:*
-1. Check internet connection
-2. GitHub API might be down
-3. Repository might be private
-4. Try again in a few minutes
+🔧 *POSSIBLE REASONS:*
+1. Internet connection issue
+2. GitHub API limit reached
+3. Repository may be private
+4. Network firewall blocking
 
-📌 *Error Details:*
-${error.message}
+📌 *ERROR DETAILS:*
+${error.message.substring(0, 80)}...
 
-⚡ *Contact support if issue persists*
-        `.trim();
+💡 *SOLUTIONS:*
+• Try again in 1 minute
+• Check .menu for other commands
+• Contact bot administrator
+
+🎯 *ALTERNATIVE:*
+Use .reposimple for basic info
+
+⚡ *SYSTEM STATUS:* Operational`.trim();
         
+        // Send error message
         await reply(errorMessage);
         
-        // Reset execution flag
-        isRepoExecuting = false;
+    } finally {
+        // 🔓 RELEASE LOCK ON COMPLETION
+        setTimeout(() => {
+            isRepoLocked = false;
+        }, 1000);
     }
 });
 
-// 🔥 EXTRA: SIMPLE REPO COMMAND
+// 📄 SIMPLE VERSION (NO API CALL)
 cmd({
     pattern: "reposimple",
-    alias: ["repo2", "sourcecode"],
-    desc: "Simple repository information",
+    alias: ["repo2", "sourcecode", "git"],
+    desc: "Simple repository link without API calls",
     react: "📄",
     category: "info",
     filename: __filename,
 },
-async (conn, mek, m, { from, reply }) => {
-    const simpleMessage = `
-📂 *BOSS-MD Repository*
-
-🔗 *GitHub:* https://github.com/bosstech-collab/Boss-md-
-
-⭐ *Please star the repository!*
-🍴 *Fork for customization!*
-
-⚡ *Use .repo for detailed info*
-    `.trim();
+async (conn, mek, m, { from, reply, sender }) => {
+    const botName = getRandomBotName();
     
+    const simpleMessage = `
+╔═══════════════════════════╗
+║      📂 ${botName} REPO       ║
+╚═══════════════════════════╝
+
+🔗 *GitHub Repository:*
+https://github.com/bosstech-collab/Boss-md-
+
+🌟 *How to contribute:*
+1. ⭐ Star the repository
+2. 🍴 Fork your own copy
+3. 🔧 Make improvements
+4. 🔄 Create pull request
+
+📦 *Features:*
+• Modern WhatsApp Bot
+• Multi-device support
+• 100+ commands
+• Plugin system
+
+🎯 *Commands:*
+• .repo - Detailed repository info
+• .alive - Check bot status
+• .menu - All commands list
+• .help - Get help
+
+⚡ ${botName} - Professional Bot System`.trim();
+    
+    // Send directly without reactions or loading
     await reply(simpleMessage);
 });
+
+// 🔄 STATUS CHECK FOR REPO
+cmd({
+    pattern: "repostatus",
+    alias: ["gitstatus", "repocheck"],
+    desc: "Check repository status",
+    react: "🔍",
+    category: "info",
+    filename: __filename,
+},
+async (conn, mek, m, { from, reply }) => {
+    const botName = getRandomBotName();
+    
+    const statusMessage = `
+🔍 *${botName} REPOSITORY STATUS*
+
+✅ *Command Status:* Operational
+📂 *Repo Module:* Loaded
+🔒 *Anti-Spam:* Active
+⏱️ *Cooldown:* 5 seconds
+
+📊 *Current Usage:*
+• .repo - Full repository info
+• .reposimple - Quick link
+• .repostatus - This command
+
+⚡ *System:*
+${botName} Repository Module v2.0`.trim();
+    
+    await reply(statusMessage);
+});
+
+console.log("✅ BOSS-MD Repository Module Loaded");
