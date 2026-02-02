@@ -29,7 +29,26 @@ cmd({
             react: { text: "⏳", key: mek.key }
         });
 
-        // Try different APIs
+        // FIRST: Send thumbnail with details
+        await conn.sendMessage(from, {
+            image: { url: vid.thumbnail },
+            caption: `
+╔═══════════════════════════╗
+║       🎬 BOSS-MD VIDEO      ║
+╚═══════════════════════════╝
+
+📌 *Title:* ${vid.title}
+👤 *Channel:* ${vid.author.name}
+⏱️ *Duration:* ${vid.timestamp}
+👁️ *Views:* ${vid.views}
+📅 *Uploaded:* ${vid.ago}
+
+⬇️ *Downloading video...*
+⏳ Please wait...
+`
+        }, { quoted: mek });
+
+        // Try different APIs for video
         let videoUrl = null;
         let quality = "360p";
 
@@ -67,31 +86,27 @@ cmd({
             return reply("❌ *Download failed*\nTry again later.");
         }
 
-        // Send video with detailed caption in your style
+        // SECOND: Send video with details
         await conn.sendMessage(from, {
             video: { url: videoUrl },
             mimetype: "video/mp4",
             caption: `
 ╔═══════════════════════════╗
-║       🎬 BOSS-MD VIDEO      ║
+║     📥 VIDEO DOWNLOADED     ║
 ╚═══════════════════════════╝
 
-📌 *Title:* ${vid.title}
-👤 *Channel:* ${vid.author.name}
-⏱️ *Duration:* ${vid.timestamp}
+📹 *Title:* ${vid.title}
 🎞️ *Quality:* ${quality}
-👁️ *Views:* ${vid.views}
-📅 *Uploaded:* ${vid.ago}
-🔗 *URL:* ${vid.url}
+⏱️ *Duration:* ${vid.timestamp}
+📊 *Size:* Processing...
 
-💡 *Download Info:*
-📥 Status: ✅ Successful
+✅ *Download Status:*
+🎯 Status: Successful
 ⚡ Speed: High Speed
-🔧 Method: YouTube API
+🔧 API: Working
 
-🎛️ *BOSS-MD System:*
+🎛️ *BOSS-MD System*
 🔧 Version: v3.5
-👑 Developer: BOSS Team
 🚀 Powered by BOSS-MD
 `
         }, { quoted: mek });
