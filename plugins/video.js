@@ -1,6 +1,7 @@
 const { cmd } = require('../command');
-const axios = require('axios');
+const { spawn } = require('child_process');
 const yts = require('yt-search');
+const fs = require('fs');
 
 cmd({
     pattern: "video",
@@ -26,7 +27,7 @@ cmd({
 
         const vid = search.videos[0];
 
-        // 🎨 Boss X MD Info
+        // 🎨 Send video info first
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
             caption: `
@@ -34,55 +35,65 @@ cmd({
 ┃🎬 *VIDEO FOUND*
 ┃📌 *Title:* ${vid.title}
 ┃⏱️ *Duration:* ${vid.timestamp}
-┃⏳ *Fetching Video...*
+┃⏳ *Downloading & Processing...*
 ╰━━━━━━━━━━━━━━⊷
 > © Powered By Boss-MD
 `
         }, { quoted: mek });
 
-        // 🔹 Fetch Video via API
-        const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
-        const res = await axios.get(apiUrl, { timeout: 60000 });
+        // 🔹 Download video via yt-dlp
+        const fileName = `./tmp_${Date.now()}.mp4`;
+        await new Promise((resolve, reject) => {
+            const ytdlp = spawn('yt-dlp', [
+                '-f', 'best[ext=mp4][height<=360]', // safe 360p
+                '-o', fileName,
+                vid.url
+            ]);
 
-        if (!res.data?.status || !res.data.result?.download?.url) {
-            return conn.sendMessage(from, { text: "❌ *Video API failed*" }, { quoted: mek });
-        }
+            ytdlp.stderr.on('data', data => console.log(data.toString()));
+            ytdlp.on('close', code => {
+                if (code === 0) resolve();
+                else reject(new Error('yt-dlp failed'));
+            });
+        });
 
-        const videoUrl = res.data.result.download.url;
-
-        try {
-            // Try sending as WhatsApp video
-            await conn.sendMessage(from, {
-                video: { url: videoUrl },
-                mimetype: 'video/mp4',
-                caption: `
+        // 🔹 Send video buffer to WhatsApp
+        const videoBuffer = fs.readFileSync(fileName);
+        await conn.sendMessage(from, {
+            video: videoBuffer,
+            mimetype: 'video/mp4',
+            caption: `
 ╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
 ┃🎬 *${vid.title}*
-┃🎞️ *Quality:* ${res.data.result.download.quality || "360p"}
+┃🎞️ *Quality:* 360p
 ┃⏱️ *Duration:* ${vid.timestamp}
 ╰━━━━━━━━━━━━━━⊷
 > © Powered By Boss-MD
 `
-            }, { quoted: mek });
+        }, { quoted: mek });
 
-        } catch (err) {
-            // ⬅️ Fallback: Send as document if video fails
-            await conn.sendMessage(from, {
-                document: { url: videoUrl },
+        // 🔹 Cleanup
+        fs.unlinkSync(fileName);
+
+    } catch (e) {
+        console.error("VIDEO ERROR:", e);
+
+        // Fallback: send as document
+        try {
+            const fallbackUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(m.text?.split(' ').slice(1).join(' '))}`;
+            await conn.sendMessage(m.chat, {
+                document: { url: fallbackUrl },
                 mimetype: 'video/mp4',
-                fileName: `${vid.title}.mp4`,
+                fileName: `Video_Fallback.mp4`,
                 caption: `
 ╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
-┃🎬 *${vid.title}*
-┃📄 *Sent as document (WhatsApp video failed)*
+┃🎬 *Sent as document (WhatsApp video failed)*
 ╰━━━━━━━━━━━━━━⊷
 > © Powered By Boss-MD
 `
             }, { quoted: mek });
+        } catch {
+            conn.sendMessage(m.chat, { text: "❌ *Video failed and fallback failed too*" }, { quoted: mek });
         }
-
-    } catch (e) {
-        console.error("VIDEO ERROR:", e);
-        conn.sendMessage(m.chat, { text: "❌ *Error while processing video*\nPlease try again later." }, { quoted: mek });
     }
 });
