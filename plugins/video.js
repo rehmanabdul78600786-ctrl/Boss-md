@@ -5,190 +5,161 @@ const yts = require('yt-search');
 const AXIOS_DEFAULTS = {
     timeout: 60000,
     headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Accept': 'application/json, text/plain, */*'
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json'
     }
 };
 
-// Fallback retry helper
+// Retry helper
 async function tryRequest(fn, tries = 3) {
-    let err;
+    let lastErr;
     for (let i = 1; i <= tries; i++) {
         try {
             return await fn();
         } catch (e) {
-            err = e;
-            await new Promise(res => setTimeout(res, i * 1000));
+            lastErr = e;
+            await new Promise(r => setTimeout(r, i * 1000));
         }
     }
-    throw err;
+    throw lastErr;
 }
 
-// Yupra API
-async function getYupraVideoByUrl(url) {
-    const api = `https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(url)}`;
+// ✅ ARSLAN API (WORKING)
+async function getVideoByArslan(url) {
+    const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(url)}`;
     const res = await tryRequest(() => axios.get(api, AXIOS_DEFAULTS));
-    if (res?.data?.success && res?.data?.data?.download_url) {
+
+    if (
+        res.data?.status === true &&
+        res.data?.result &&
+        res.data?.result?.status !== false &&
+        res.data?.result?.download
+    ) {
         return {
-            download: res.data.data.download_url,
-            title: res.data.data.title,
-            thumbnail: res.data.data.thumbnail
+            download: res.data.result.download,
+            title: res.data.result.title || "YouTube Video",
+            thumbnail: res.data.result.thumbnail || null
         };
     }
-    throw new Error("Yupra failed");
+
+    throw new Error(res.data?.result?.message || "Download failed");
 }
 
-// Okatsu fallback
-async function getOkatsuVideoByUrl(url) {
-    const api = `https://okatsu-rolezapiiz.vercel.app/downloader/ytmp4?url=${encodeURIComponent(url)}`;
-    const res = await tryRequest(() => axios.get(api, AXIOS_DEFAULTS));
-    if (res.data?.result?.mp4)
-        return { download: res.data.result.mp4, title: res.data.result.title, thumbnail: res.data.result.thumb };
-    throw new Error("Okatsu failed");
-}
-
-// 🔥 STYLISH BOT NAME SYSTEM
+// 🔥 BOT NAME STYLES (UNCHANGED)
 const botNameStyles = [
-    { name: "𝓑𝓞𝓢𝓢-𝓜𝓓", style: "script" },
-    { name: "𝐁𝐎𝐒𝐒-𝐌𝐃", style: "bold" },
-    { name: "𝘽𝙊𝙎𝙎-𝙈𝘿", style: "boldsans" },
-    { name: "𝗕𝗢𝗦𝗦-𝗠𝗗", style: "sans" },
-    { name: "ᗷOᔕᔕ-ᗰᗪ", style: "box" },
-    { name: "ＢＯＳＳ－ＭＤ", style: "fullwidth" },
-    { name: "🄱🄾🅂🅂-🄼🄳", style: "squared" },
-    { name: "B⃟O⃟S⃟S⃟-⃟M⃟D⃟", style: "circle" }
+    "𝓑𝓞𝓢𝓢-𝓜𝓓",
+    "𝐁𝐎𝐒𝐒-𝐌𝐃",
+    "𝘽𝙊𝙎𝙎-𝙈𝘿",
+    "𝗕𝗢𝗦𝗦-𝗠𝗗",
+    "ᗷOᔕᔕ-ᗰᗪ",
+    "ＢＯＳＳ－ＭＤ",
+    "🄱🄾🅂🅂-🄼🄳",
+    "B⃟O⃟S⃟S⃟-⃟M⃟D⃟"
 ];
 
-function getRandomBotName() {
-    return botNameStyles[Math.floor(Math.random() * botNameStyles.length)].name;
-}
+const getRandomBotName = () =>
+    botNameStyles[Math.floor(Math.random() * botNameStyles.length)];
 
 cmd({
     pattern: "video",
     alias: ["ytvideo", "ytv", "ytmp", "download", "ytdl"],
-    desc: "Download YouTube videos with multiple quality options",
+    desc: "Download YouTube video",
     category: "media",
     react: "🎬",
     filename: __filename
 }, async (sock, message) => {
     try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
+        const text =
+            message.message?.conversation ||
+            message.message?.extendedTextMessage?.text ||
+            "";
+
         const query = text.split(" ").slice(1).join(" ").trim();
         const botName = getRandomBotName();
 
         if (!query) {
-            return sock.sendMessage(message.chat, { 
-                text: `🎬 *${botName} YouTube Downloader*\n\n❌ Please provide a video name or URL.\n\n📌 *Usage:*\n.video taylor swift\n.video https://youtube.com/watch?...\n\n⚡ *Features:*\n• Auto-search by name\n• Direct URL support\n• HQ Video Download\n• Smart retry system` 
+            return sock.sendMessage(message.chat, {
+                text:
+`🎬 *${botName} YouTube Downloader*
+
+❌ Video name ya URL do
+
+📌 *Usage*
+.video taylor swift
+.video https://youtube.com/watch?v=xxxx
+
+⚡ Fast • HD • MP4`
             }, { quoted: message });
         }
 
-        // Send processing message
-        await sock.sendMessage(message.chat, { 
-            text: `🎬 *${botName} YouTube Downloader*\n🔍 Processing your request...\n📥 Fetching video data...` 
+        await sock.sendMessage(message.chat, {
+            text: `🎬 *${botName}*\n🔍 Processing your request...`
         }, { quoted: message });
 
-        let videoUrl = "";
-        let thumbnail = "";
-        let videoTitle = "";
+        let videoUrl, title, thumb;
 
-        // URL or search
         if (query.startsWith("http")) {
             videoUrl = query;
-            thumbnail = "https://i.imgur.com/LyHic3i.gif";
-            videoTitle = "YouTube Video";
+            title = "YouTube Video";
         } else {
             const search = await yts(query);
-            if (!search.videos.length) return sock.sendMessage(message.chat, { 
-                text: `❌ *${botName} Search Result*\n\nNo videos found for: "${query}"\n\n💡 *Tips:*\n• Check spelling\n• Try different keywords\n• Use exact video title` 
+            if (!search.videos.length)
+                return sock.sendMessage(message.chat, {
+                    text: `❌ No results found for *${query}*`
+                }, { quoted: message });
+
+            const v = search.videos[0];
+            videoUrl = v.url;
+            title = v.title;
+            thumb = v.thumbnail;
+        }
+
+        if (thumb) {
+            await sock.sendMessage(message.chat, {
+                image: { url: thumb },
+                caption:
+`🎬 *${botName} Downloader*
+
+📺 *Title:* ${title}
+🔗 ${videoUrl}
+
+⏳ Downloading...`
             }, { quoted: message });
-            
-            videoUrl = search.videos[0].url;
-            thumbnail = search.videos[0].thumbnail;
-            videoTitle = search.videos[0].title;
         }
 
-        // Send thumbnail with info
-        await sock.sendMessage(message.chat, { 
-            image: { url: thumbnail }, 
-            caption: `🎬 *${botName} YouTube Downloader*\n\n📺 *Title:* ${videoTitle}\n🔗 *URL:* ${videoUrl}\n\n⏳ *Downloading video...*\n📊 *Quality:* Highest Available\n⚡ *Powered by:* ${botName}` 
-        }, { quoted: message });
+        const video = await getVideoByArslan(videoUrl);
 
-        // Fetch video with fallback
-        let videoData;
-        try {
-            videoData = await getYupraVideoByUrl(videoUrl);
-        } catch {
-            videoData = await getOkatsuVideoByUrl(videoUrl);
-        }
+        const caption =
+`🎬 *${botName} YouTube Video*
 
-        // Send video with stylish caption
-        const finalCaption = `🎬 *${botName} YouTube Downloader*\n
-📺 *Video Title:* ${videoData.title || videoTitle}
-📊 *Quality:* High Definition
-💾 *Format:* MP4
-⏱️ *Status:* Downloaded Successfully
-
-📌 *Download Details:*
-├─ 📹 Video: Ready to Play
-├─ 🔊 Audio: Included
-├─ 📱 Compatible: All Devices
-└─ ⚡ Speed: Optimized
+📺 *Title:* ${video.title}
+📊 *Quality:* HD MP4
+📱 *Compatible:* All devices
 
 👤 *Requested by:* ${message.pushName || "User"}
-🆔 *User ID:* ${message.sender.split('@')[0]}
 
-⚡ *Powered by:* ${botName}
-🎬 *Enjoy your video!*`;
+⚡ Powered by ${botName}`;
 
-        // Send video
         await sock.sendMessage(message.chat, {
-            video: { url: videoData.download },
-            mimetype: 'video/mp4',
-            fileName: `${(videoData.title || "video").replace(/[^\w\s]/gi, '')}.mp4`,
-            caption: finalCaption
+            video: { url: video.download },
+            mimetype: "video/mp4",
+            caption,
+            fileName: `${video.title.replace(/[^\w\s]/gi, '')}.mp4`
         }, { quoted: message });
 
-        // Send success reaction
         await sock.sendMessage(message.chat, {
-            react: { text: '✅', key: message.key }
+            react: { text: "✅", key: message.key }
         });
 
     } catch (err) {
-        console.error('Video Error:', err);
         const botName = getRandomBotName();
-        await sock.sendMessage(message.chat, { 
-            text: `❌ *${botName} Download Failed*\n\nError: ${err.message}\n\n💡 *Solutions:*\n1. Try different video\n2. Check internet connection\n3. Try again in 1 minute\n4. Contact owner for support\n\n⚡ *Bot:* ${botName}` 
+        await sock.sendMessage(message.chat, {
+            text:
+`❌ *${botName} Error*
+
+⚠️ ${err.message}
+
+💡 Try another video or valid YouTube URL`
         }, { quoted: message });
-    }
-});
-
-// 🔥 EXTRA: VIDEO INFO COMMAND
-cmd({
-    pattern: "videoinfo",
-    alias: ["vinfo", "ytinfo"],
-    desc: "Get YouTube video information without downloading",
-    category: "media",
-    react: "📊",
-    filename: __filename
-}, async (sock, message) => {
-    try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
-        const query = text.split(" ").slice(1).join(" ").trim();
-        const botName = getRandomBotName();
-
-        if (!query) {
-            return sock.sendMessage(message.chat, { 
-                text: `📊 *${botName} Video Info*\n\nUsage: .videoinfo <YouTube URL or name>` 
-            }, { quoted: message });
-        }
-
-        await sock.sendMessage(message.chat, { 
-            text: `📊 *${botName} Video Info*\n🔍 Fetching video details...` 
-        }, { quoted: message });
-
-        // ... video info fetching logic
-
-    } catch (err) {
-        console.error('VideoInfo Error:', err);
     }
 });
