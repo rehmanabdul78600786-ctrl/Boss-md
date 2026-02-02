@@ -16,7 +16,7 @@ cmd({
             return reply("❌ *Search With Query*\nExample: .video pasoori");
         }
 
-        // 🔍 Search
+        // Search
         const search = await yts(query);
         if (!search.videos || !search.videos.length) {
             return reply("❌ *No video found*");
@@ -24,12 +24,12 @@ cmd({
 
         const vid = search.videos[0];
 
-        // Send loading reaction only
+        // Send loading reaction
         await conn.sendMessage(from, {
             react: { text: "⏳", key: mek.key }
         });
 
-        // 🎥 Try different APIs
+        // Try different APIs
         let videoUrl = null;
         let quality = "360p";
 
@@ -42,7 +42,9 @@ cmd({
                 videoUrl = res.data.result.download.url;
                 quality = res.data.result.download.quality || "360p";
             }
-        } catch (e) {}
+        } catch (e) {
+            console.log("API 1 failed:", e.message);
+        }
 
         // Try backup API
         if (!videoUrl) {
@@ -56,18 +58,42 @@ cmd({
                         quality = "720p";
                     }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.log("API 2 failed:", e.message);
+            }
         }
 
         if (!videoUrl) {
             return reply("❌ *Download failed*\nTry again later.");
         }
 
-        // Send video directly
+        // Send video with detailed caption in your style
         await conn.sendMessage(from, {
             video: { url: videoUrl },
             mimetype: "video/mp4",
-            caption: `🎬 *${vid.title}*\n⏱️ ${vid.timestamp} | 📊 ${quality}\n\n⚡ Powered by BOSS-MD`
+            caption: `
+╔═══════════════════════════╗
+║       🎬 BOSS-MD VIDEO      ║
+╚═══════════════════════════╝
+
+📌 *Title:* ${vid.title}
+👤 *Channel:* ${vid.author.name}
+⏱️ *Duration:* ${vid.timestamp}
+🎞️ *Quality:* ${quality}
+👁️ *Views:* ${vid.views}
+📅 *Uploaded:* ${vid.ago}
+🔗 *URL:* ${vid.url}
+
+💡 *Download Info:*
+📥 Status: ✅ Successful
+⚡ Speed: High Speed
+🔧 Method: YouTube API
+
+🎛️ *BOSS-MD System:*
+🔧 Version: v3.5
+👑 Developer: BOSS Team
+🚀 Powered by BOSS-MD
+`
         }, { quoted: mek });
 
         // Success reaction
@@ -80,6 +106,6 @@ cmd({
         await conn.sendMessage(from, {
             react: { text: "❌", key: mek.key }
         });
-        reply("❌ *Video processing error*");
+        reply("❌ *Video processing error*\nPlease try again later.");
     }
 });
