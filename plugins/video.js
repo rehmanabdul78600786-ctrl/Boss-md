@@ -1,7 +1,6 @@
 const { cmd } = require('../command');
 const axios = require('axios');
 const yts = require('yt-search');
-const { fakevCard } = require('../lib/fakevCard');
 
 cmd({
     pattern: "video",
@@ -14,7 +13,7 @@ cmd({
     try {
         const query = q || args.join(" ");
         if (!query) {
-            return reply("❌ *Search With Query*\nExample:\n.video pasoori");
+            return reply("❌ *Search With Query*\nExample: .video pasoori");
         }
 
         // 🔍 Search
@@ -25,73 +24,62 @@ cmd({
 
         const vid = search.videos[0];
 
-        // 🎨 YOUR STYLE MESSAGE
-        const caption = `
-╔════════════════════════════╗
-║       🎬 BOSS-MD VIDEO      ║
-╚════════════════════════════╝
-
-📌 *Title:* ${vid.title}
-⏱️ *Duration:* ${vid.timestamp}
-👁️ *Views:* ${vid.views}
-📅 *Uploaded:* ${vid.ago}
-
-⬇️ *Processing video...*
-`;
-
-        await conn.sendMessage(from, {
-            image: { url: vid.thumbnail },
-            caption
-        }, { quoted: fakevCard });
-
+        // Send loading reaction only
         await conn.sendMessage(from, {
             react: { text: "⏳", key: mek.key }
         });
 
-        // 🎥 API CALL
-        const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
-        const res = await axios.get(apiUrl, { timeout: 60000 });
+        // 🎥 Try different APIs
+        let videoUrl = null;
+        let quality = "360p";
 
-        if (
-            !res.data ||
-            !res.data.status ||
-            !res.data.result ||
-            !res.data.result.download ||
-            !res.data.result.download.url
-        ) {
-            return reply("❌ *Video API failed*");
+        // Try first API
+        try {
+            const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
+            const res = await axios.get(apiUrl, { timeout: 30000 });
+            
+            if (res.data && res.data.status && res.data.result && res.data.result.download && res.data.result.download.url) {
+                videoUrl = res.data.result.download.url;
+                quality = res.data.result.download.quality || "360p";
+            }
+        } catch (e) {}
+
+        // Try backup API
+        if (!videoUrl) {
+            try {
+                const videoId = vid.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
+                if (videoId) {
+                    const backupApi = `https://api.y2mate.guru/api/ytmp4?id=${videoId}`;
+                    const res2 = await axios.get(backupApi, { timeout: 30000 });
+                    if (res2.data && res2.data.url) {
+                        videoUrl = res2.data.url;
+                        quality = "720p";
+                    }
+                }
+            } catch (e) {}
         }
 
-        const dl = res.data.result.download;
-        const meta = res.data.result.metadata || {};
+        if (!videoUrl) {
+            return reply("❌ *Download failed*\nTry again later.");
+        }
 
-        // 📤 SEND VIDEO
+        // Send video directly
         await conn.sendMessage(from, {
-            video: { url: dl.url },
+            video: { url: videoUrl },
             mimetype: "video/mp4",
-            caption: `
-╔════════════════════════════╗
-║     🎬 DOWNLOAD COMPLETE    ║
-╚════════════════════════════╝
+            caption: `🎬 *${vid.title}*\n⏱️ ${vid.timestamp} | 📊 ${quality}\n\n⚡ Powered by BOSS-MD`
+        }, { quoted: mek });
 
-📹 *${meta.title || vid.title}*
-🎞️ *Quality:* ${dl.quality || "360p"}
-⏱️ *Duration:* ${meta.duration || vid.timestamp}
-👁️ *Views:* ${vid.views}
-
-⚡ *Powered by BOSS-MD*
-`
-        }, { quoted: fakevCard });
-
+        // Success reaction
         await conn.sendMessage(from, {
             react: { text: "✅", key: mek.key }
         });
 
     } catch (err) {
         console.error("VIDEO ERROR:", err);
-        reply("❌ *Video processing error*\nPlease try again later.");
         await conn.sendMessage(from, {
             react: { text: "❌", key: mek.key }
         });
+        reply("❌ *Video processing error*");
     }
 });
