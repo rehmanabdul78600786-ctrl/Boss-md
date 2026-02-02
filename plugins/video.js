@@ -10,7 +10,7 @@ const AXIOS_DEFAULTS = {
     }
 };
 
-// retry helper (unchanged)
+// retry helper (same)
 async function tryRequest(fn, tries = 3) {
     let err;
     for (let i = 1; i <= tries; i++) {
@@ -24,38 +24,47 @@ async function tryRequest(fn, tries = 3) {
     throw err;
 }
 
-// ✅ ONLY WORKING API (AS YOU GAVE)
-async function getVideo(url) {
+// ✅ ONLY API YOU GAVE + OBJECT FIX
+async function getYtVideoByUrl(url) {
     const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(url)}`;
     const res = await tryRequest(() => axios.get(api, AXIOS_DEFAULTS));
 
-    // EXACT JSON HANDLING
-    if (res.data?.status === true) {
-
-        if (res.data.result?.status === false) {
-            throw new Error(res.data.result.message || "Invalid YouTube URL");
-        }
-
-        if (res.data.result?.download) {
-            return {
-                download: res.data.result.download,
-                title: res.data.result.title || "YouTube Video",
-                thumbnail: res.data.result.thumbnail || null
-            };
-        }
+    if (res.data?.status !== true) {
+        throw new Error("API not responding");
     }
 
-    throw new Error("Download failed");
+    // invalid url case
+    if (res.data.result?.status === false) {
+        throw new Error(res.data.result.message || "Invalid YouTube URL");
+    }
+
+    let download = res.data.result?.download;
+
+    // 🔥 MAIN FIX (OBJECT → STRING)
+    if (typeof download === "object" && download !== null) {
+        download = download.url || download.link;
+    }
+
+    if (typeof download !== "string") {
+        throw new Error("Download URL not found");
+    }
+
+    return {
+        download: download,
+        title: res.data.result.title || "YouTube Video",
+        thumbnail: res.data.result.thumbnail || null
+    };
 }
 
-// bot name (same)
+// bot name (unchanged)
 const botNames = [
     "𝓑𝓞𝓢𝓢-𝓜𝓓",
     "𝐁𝐎𝐒𝐒-𝐌𝐃",
     "𝗕𝗢𝗦𝗦-𝗠𝗗",
     "ᗷOᔕᔕ-ᗰᗪ"
 ];
-const getBotName = () => botNames[Math.floor(Math.random() * botNames.length)];
+const getBotName = () =>
+    botNames[Math.floor(Math.random() * botNames.length)];
 
 cmd({
     pattern: "video",
@@ -78,12 +87,7 @@ cmd({
             return sock.sendMessage(message.chat, {
                 text:
 `🎬 *${botName}*
-
-❌ Video name ya YouTube URL do
-
-📌 Example:
-.video bela ciao
-.video https://youtube.com/watch?v=xxxx`
+❌ Video name ya URL do`
             }, { quoted: message });
         }
 
@@ -101,7 +105,7 @@ cmd({
             const search = await yts(query);
             if (!search.videos.length) {
                 return sock.sendMessage(message.chat, {
-                    text: `❌ No video found`
+                    text: "❌ No video found"
                 }, { quoted: message });
             }
             videoUrl = search.videos[0].url;
@@ -119,19 +123,17 @@ cmd({
             }, { quoted: message });
         }
 
-        const data = await getVideo(videoUrl);
+        // 🔥 API CALL
+        const videoData = await getYtVideoByUrl(videoUrl);
 
         await sock.sendMessage(message.chat, {
-            video: { url: data.download },
+            video: videoData.download, // ✅ STRING ONLY
             mimetype: "video/mp4",
-            fileName: `${data.title.replace(/[^\w\s]/gi, '')}.mp4`,
+            fileName: `${videoData.title.replace(/[^\w\s]/gi, '')}.mp4`,
             caption:
 `🎬 *${botName}*
-
-📺 ${data.title}
-✅ Download Complete
-
-👤 ${message.pushName || "User"}`
+📺 ${videoData.title}
+✅ Downloaded`
         }, { quoted: message });
 
         await sock.sendMessage(message.chat, {
@@ -142,10 +144,7 @@ cmd({
         await sock.sendMessage(message.chat, {
             text:
 `❌ Error
-
-⚠️ ${err.message}
-
-✔️ Valid YouTube URL use karo`
+⚠️ ${err.message}`
         }, { quoted: message });
     }
 });
