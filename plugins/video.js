@@ -1,7 +1,8 @@
 const { cmd } = require('../command');
-const axios = require('axios');
+const { spawn } = require('child_process');
 const yts = require('yt-search');
-const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
 cmd({
     pattern: "video",
@@ -10,29 +11,24 @@ cmd({
     category: "download",
     react: "🎬",
     filename: __filename
-},
-async (conn, mek, m) => {
+}, async (conn, mek, m) => {
     try {
         const from = m.chat;
-        const q = m.text?.split(' ').slice(1).join(' ');
+        const query = m.text?.split(' ').slice(1).join(' ');
 
-        if (!q) {
-            return conn.sendMessage(from, {
-                text: "❌ *Search With Query*\nExample:\n.video pasoori"
-            }, { quoted: mek });
+        if (!query) {
+            return conn.sendMessage(from, { text: "❌ *Search With Query*\nExample:\n.video pasoori" }, { quoted: mek });
         }
 
         // 🔍 Search YouTube
-        const search = await yts(q);
+        const search = await yts(query);
         if (!search.videos.length) {
-            return conn.sendMessage(from, {
-                text: "❌ *No video found*"
-            }, { quoted: mek });
+            return conn.sendMessage(from, { text: "❌ *No video found*" }, { quoted: mek });
         }
 
         const vid = search.videos[0];
 
-        // 🎨 Boss X MD Info
+        // 🎨 Send info first
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
             caption: `
@@ -40,46 +36,48 @@ async (conn, mek, m) => {
 ┃🎬 *VIDEO FOUND*
 ┃📌 *Title:* ${vid.title}
 ┃⏱️ *Duration:* ${vid.timestamp}
-┃⏳ *Processing...*
+┃⏳ *Downloading & Processing...*
 ╰━━━━━━━━━━━━━━⊷
 > © Powered By Boss-MD
 `
         }, { quoted: mek });
 
-        // 🎥 Fetch video URL from API
-        const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
-        const res = await axios.get(apiUrl, { timeout: 60000 });
+        // 🔹 Download video using yt-dlp
+        const fileName = `./tmp_${Date.now()}.mp4`;
+        await new Promise((resolve, reject) => {
+            const ytdlp = spawn('yt-dlp', [
+                '-f', 'best[ext=mp4][height<=360]', // safe 360p
+                '-o', fileName,
+                vid.url
+            ]);
 
-        if (!res.data?.status) {
-            return conn.sendMessage(from, {
-                text: "❌ *Video API failed*"
-            }, { quoted: mek });
-        }
+            ytdlp.stderr.on('data', data => console.log(data.toString()));
+            ytdlp.on('close', code => {
+                if (code === 0) resolve();
+                else reject(new Error('yt-dlp failed'));
+            });
+        });
 
-        const dl = res.data.result.download;
-
-        // ⬇️ Download video as buffer for WhatsApp
-        const videoRes = await fetch(dl.url);
-        const videoBuffer = await videoRes.buffer();
-
-        // 📤 Send video
+        // 🔹 Send video
+        const videoBuffer = fs.readFileSync(fileName);
         await conn.sendMessage(from, {
             video: videoBuffer,
             mimetype: 'video/mp4',
             caption: `
 ╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
 ┃🎬 *${vid.title}*
-┃🎞️ *Quality:* ${dl.quality || "360p"}
+┃🎞️ *Quality:* 360p
 ┃⏱️ *Duration:* ${vid.timestamp}
 ╰━━━━━━━━━━━━━━⊷
 > © Powered By Boss-MD
 `
         }, { quoted: mek });
 
+        // 🔹 Cleanup
+        fs.unlinkSync(fileName);
+
     } catch (e) {
-        console.log("VIDEO ERROR:", e);
-        conn.sendMessage(m.chat, {
-            text: "❌ *Error while processing video*\nPlease try again later."
-        }, { quoted: mek });
+        console.error("VIDEO ERROR:", e);
+        conn.sendMessage(m.chat, { text: "❌ *Error while processing video*\nPlease try again later." }, { quoted: mek });
     }
 });
