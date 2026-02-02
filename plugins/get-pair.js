@@ -1,88 +1,96 @@
 const { cmd } = require('../command');
 const axios = require('axios');
 
+// Backup API endpoints
+const API_ENDPOINTS = [
+    "https://pairing-site-boss-874t.onrender.com/code?number=",
+    "https://api.lolhuman.xyz/api/pairing?apikey=GataDios&number=",
+    "https://api.botcahx.live/api/pairing?number="
+];
+
 cmd({
     pattern: "pair",
-    alias: ["getpair", "clonebot", "linkbot", "paircode"],
+    alias: ["getpair", "clonebot"],
     react: "🔗",
-    desc: "Generate pairing code for BOSS-MD bot cloning",
+    desc: "Get pairing code for BOSS-MD bot",
     category: "tools",
-    use: ".pair <number> or just .pair",
+    use: ".pair 923452401XXX",
     filename: __filename
-}, async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, senderNumber, reply, sender }) => {
+}, async (conn, mek, m, { from, q, senderNumber, reply }) => {
     try {
-        // Extract phone number (with better handling)
-        let phoneNumber = "";
+        // Extract phone number
+        const phoneNumber = q ? q.trim().replace(/[^0-9]/g, '') : senderNumber.replace(/[^0-9]/g, '');
         
-        if (q && q.trim() !== "") {
-            // If user provided number in command
-            phoneNumber = q.trim().replace(/[^0-9]/g, '');
-        } else if (senderNumber) {
-            // Use sender's number if no number provided
-            phoneNumber = senderNumber.replace(/[^0-9]/g, '');
-        } else {
-            // Fallback to sender ID
-            phoneNumber = sender.replace(/[^0-9]/g, '');
-        }
-
-        // Validate phone number
         if (!phoneNumber || phoneNumber.length < 10) {
-            return await reply(`📱 *PAIRING SYSTEM*\n\n❌ *Invalid Phone Number*\nPlease provide a valid 10+ digit number\n\n💡 *Example:* \`.pair 923452401XXX\`\n💡 *Example:* \`.pair\` (uses your number)`);
+            return await reply("❌ *Valid number likho*\nExample: `.pair 923452401XXX`\nExample: `.pair` (apna number)");
         }
-
-        // Show processing message
-        const processingMsg = await reply(`🔍 *Generating Pairing Code...*\n📞 Number: +${phoneNumber}\n⏳ Please wait...`);
-
-        // Make API request
-        const response = await axios.get(
-            `https://pairing-site-boss-874t.onrender.com/code?number=${encodeURIComponent(phoneNumber)}`,
-            { timeout: 10000 }
-        );
-
-        if (!response.data || !response.data.code) {
-            await conn.sendMessage(from, { delete: processingMsg.key });
-            return await reply(`❌ *API Error*\nFailed to retrieve pairing code.\n\n🔧 *Possible reasons:*\n1. Server is down\n2. Invalid number format\n3. Try again in 2 minutes`);
-        }
-
-        const pairingCode = response.data.code;
         
-        // Delete processing message
-        await conn.sendMessage(from, { delete: processingMsg.key });
-
-        // Send success message with styling
-        await reply(`✅ *PAIRING CODE GENERATED*\n\n🔐 *Code:* \`${pairingCode}\`\n📱 *Number:* +${phoneNumber}\n⏰ *Generated:* ${new Date().toLocaleTimeString()}\n\n💡 *How to use:*\n1. Open WhatsApp > Linked Devices\n2. Tap "Link a Device"\n3. Enter this 6-digit code\n4. Wait for verification\n\n⚠️ *Note:* Code expires in 15 minutes`);
-
-        // Optional: Send code separately after 1 second
+        // Trying message
+        const tryingMsg = await reply(`🔍 *Trying to get code...*\n📱 Number: ${phoneNumber}\n⏳ Please wait...`);
+        
+        let pairingCode = null;
+        let usedAPI = "Primary";
+        
+        // Try multiple APIs one by one
+        for (let apiUrl of API_ENDPOINTS) {
+            try {
+                const fullUrl = apiUrl + encodeURIComponent(phoneNumber);
+                console.log(`Trying API: ${apiUrl.substring(0, 50)}...`);
+                
+                // Try with shorter timeout
+                const response = await axios.get(fullUrl, { 
+                    timeout: 5000 // 5 seconds timeout
+                });
+                
+                if (response.data && response.data.code) {
+                    pairingCode = response.data.code;
+                    usedAPI = apiUrl.includes("lolhuman") ? "Backup 1" : 
+                              apiUrl.includes("botcahx") ? "Backup 2" : "Main";
+                    break;
+                }
+            } catch (apiError) {
+                console.log(`API failed: ${apiError.message}`);
+                continue; // Try next API
+            }
+        }
+        
+        // Delete trying message
+        if (tryingMsg.key) {
+            try {
+                await conn.sendMessage(from, { delete: tryingMsg.key });
+            } catch (e) {}
+        }
+        
+        if (!pairingCode) {
+            return await reply(`❌ *Sab APIs fail ho gayi!*\n\n📱 *Number:* ${phoneNumber}\n\n💡 *Try these:*\n1. 2-3 minute wait karo\n2. Different number try karo\n3. Baad mein try karo\n\n⚠️ Servers busy hain`);
+        }
+        
+        // Send success messages (original style)
+        await reply(`> *𝘽𝙊𝙎𝙎-𝙈𝘿 PAIRING COMPLETED*\n\n*Your pairing code is:* ${pairingCode}`);
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        await reply(`${pairingCode}`);
+        
+        // Optional: Send usage instructions
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        await reply(`📋 *Copy this code:*\n\`\`\`${pairingCode}\`\`\``);
-
+        await reply(`💡 *How to use:*\n1. WhatsApp > Settings > Linked Devices\n2. "Link a Device" par click karo\n3. Ye code enter karo: ${pairingCode}\n4. 15 minute tak valid hai`);
+        
     } catch (error) {
-        console.error("Pair command error:", error);
-        
-        // Handle different types of errors
-        let errorMessage = "❌ An error occurred while getting pairing code.";
-        
-        if (error.code === 'ECONNABORTED') {
-            errorMessage = "❌ Request timeout. Server might be busy. Try again in 1 minute.";
-        } else if (error.response) {
-            errorMessage = `❌ Server error: ${error.response.status}`;
-        } else if (error.request) {
-            errorMessage = "❌ No response from server. Check your internet connection.";
-        }
-        
-        await reply(errorMessage);
+        console.error("Final pair error:", error);
+        await reply("❌ System error! Thori der baad try karo.");
     }
 });
 
-// Optional: Add a simple help command for pairing
+// Simple working version (no API calls - manual method)
 cmd({
-    pattern: "pairhelp",
-    alias: ["pairinghelp"],
-    react: "❓",
-    desc: "Show pairing system help",
-    category: "help",
+    pattern: "pair2",
+    alias: ["manualpair", "pairmanual"],
+    react: "📱",
+    desc: "Manual pairing method",
+    category: "tools",
     filename: __filename
 }, async (conn, mek, m, { from, reply }) => {
-    await reply(`📱 *PAIRING SYSTEM HELP*\n\n🎯 *Commands:*\n• .pair <number> - Get pairing code for specific number\n• .pair - Get code for your own number\n• .pairhelp - Show this help\n\n💡 *Examples:*\n\`.pair 923452401XXX\`\n\`.pair 918123456789\`\n\`.pair\` (auto-detect your number)\n\n⚠️ *Important:*\n• Number must be 10-15 digits\n• No + sign needed\n• Code expires in 15 minutes\n• One-time use only\n\n🔧 *BOSS-MD Cloning System*`);
+    await reply(`📱 *MANUAL PAIRING METHOD*\n\n1. *WhatsApp Web kholo*\n2. *QR code dikhega*\n3. *Ye link use karo:*\nhttps://web.whatsapp.com/\n4. *Phone se scan karo*\n\n🔧 *BOSS-MD Setup:*\n• Bot ko phone pe install karo\n• WhatsApp link karo\n• Ready ho jayega!\n\n💡 Auto pairing abhi available nahi hai`);
 });
