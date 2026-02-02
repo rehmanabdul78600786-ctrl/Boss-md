@@ -13,8 +13,7 @@ cmd({
     try {
         const query = q || args.join(" ");
         if (!query) {
-            return reply("👀 𝘽𝙊𝙎𝙎-𝙈𝘿 chapri Kuch or leta tu bot use krna a jata
-❌ *Search With Query*\nExample: .video pasoori");
+            return reply("❌ *Search With Query*\nExample: .video pasoori");
         }
 
         // Search
