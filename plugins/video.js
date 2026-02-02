@@ -29,7 +29,7 @@ cmd({
             react: { text: "⏳", key: mek.key }
         });
 
-        // FIRST: Send thumbnail with FULL details
+        // PEHLE: Thumbnail bhejo WITHOUT quoted
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
             caption: `
@@ -47,7 +47,7 @@ cmd({
 ⬇️ *Downloading video...*
 ⏳ Please wait...
 `
-        }, { quoted: mek });
+        });
 
         // Try different APIs for video
         let videoUrl = null;
@@ -87,7 +87,10 @@ cmd({
             return reply("❌ *Download failed*\nTry again later.");
         }
 
-        // SECOND: Send video with FEW details
+        // 2 second wait
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // DOOSRA: Video bhejo WITH quoted
         await conn.sendMessage(from, {
             video: { url: videoUrl },
             mimetype: "video/mp4",
