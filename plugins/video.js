@@ -14,7 +14,7 @@ cmd({
     try {
         const query = q || args.join(" ");
         if (!query) {
-            return reply("❌ *Search With Query Kash Bhai ap Kuch or pr laty*\nExample:\n.video pasoori");
+            return reply("❌ *Search With Query*\nExample:\n.video pasoori");
         }
 
         // 🔍 Search
