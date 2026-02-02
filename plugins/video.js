@@ -1,7 +1,6 @@
 const { cmd } = require('../command');
 const axios = require('axios');
 const yts = require('yt-search');
-const { fakevCard } = require('../lib/fakevCard');
 
 cmd({
     pattern: "video",
@@ -25,27 +24,17 @@ cmd({
 
         const vid = search.videos[0];
 
-        // 🎨 YOUR STYLE MESSAGE
-        const caption = `
-╔═══════════════════════════╗
-║       🎬 BOSS-MD VIDEO      ║
-╚═══════════════════════════╝
-
-📌 *Title:* ${vid.title}
-⏱️ *Duration:* ${vid.timestamp}
-⏳ *Processing video...*
-`;
-
+        // Thumbnail message (without quoted)
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
-            caption
-        }, { quoted: fakevCard });
+            caption: `🎬 *${vid.title}*\n⏱️ ${vid.timestamp}\n⬇️ Downloading video...`
+        });
 
         await conn.sendMessage(from, {
             react: { text: "⏳", key: mek.key }
         });
 
-        // 🎥 API CALL
+        // API call
         const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
         const res = await axios.get(apiUrl, { timeout: 60000 });
 
@@ -62,22 +51,12 @@ cmd({
         const dl = res.data.result.download;
         const meta = res.data.result.metadata || {};
 
-        // 📤 SEND VIDEO (DIRECT STREAM)
+        // Send video (with quoted mek)
         await conn.sendMessage(from, {
             video: { url: dl.url },
             mimetype: "video/mp4",
-            caption: `
-╔═══════════════════════════╗
-║     🎬 BOSS-MD VIDEO       ║
-╚═══════════════════════════╝
-
-🎬 *${meta.title || vid.title}*
-🎞️ *Quality:* ${dl.quality || "360p"}
-⏱️ *Duration:* ${meta.duration || vid.timestamp}
-
-⚡ *Powered by BOSS-MD*
-`
-        }, { quoted: fakevCard });
+            caption: `🎬 *${meta.title || vid.title}*\n🎞️ ${dl.quality || "360p"} | ⏱️ ${meta.duration || vid.timestamp}\n⚡ BOSS-MD`
+        }, { quoted: mek });
 
         await conn.sendMessage(from, {
             react: { text: "✅", key: mek.key }
