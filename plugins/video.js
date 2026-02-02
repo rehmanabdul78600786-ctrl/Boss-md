@@ -1,6 +1,7 @@
 const { cmd } = require('../command');
 const axios = require('axios');
 const yts = require('yt-search');
+const fetch = require('node-fetch');
 
 cmd({
     pattern: "video",
@@ -21,7 +22,7 @@ async (conn, mek, m) => {
             }, { quoted: mek });
         }
 
-        // 🔍 Search
+        // 🔍 Search YouTube
         const search = await yts(q);
         if (!search.videos.length) {
             return conn.sendMessage(from, {
@@ -31,7 +32,7 @@ async (conn, mek, m) => {
 
         const vid = search.videos[0];
 
-        // 🎨 BOSS X MD INFO
+        // 🎨 Boss X MD Info
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
             caption: `
@@ -45,9 +46,9 @@ async (conn, mek, m) => {
 `
         }, { quoted: mek });
 
-        // 🎥 API
+        // 🎥 Fetch video URL from API
         const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
-        const res = await axios.get(apiUrl);
+        const res = await axios.get(apiUrl, { timeout: 60000 });
 
         if (!res.data?.status) {
             return conn.sendMessage(from, {
@@ -57,10 +58,14 @@ async (conn, mek, m) => {
 
         const dl = res.data.result.download;
 
-        // 📤 SEND VIDEO
+        // ⬇️ Download video as buffer for WhatsApp
+        const videoRes = await fetch(dl.url);
+        const videoBuffer = await videoRes.buffer();
+
+        // 📤 Send video
         await conn.sendMessage(from, {
-            video: { url: dl.url },
-            mimetype: "video/mp4",
+            video: videoBuffer,
+            mimetype: 'video/mp4',
             caption: `
 ╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
 ┃🎬 *${vid.title}*
@@ -72,9 +77,9 @@ async (conn, mek, m) => {
         }, { quoted: mek });
 
     } catch (e) {
-        console.log(e);
+        console.log("VIDEO ERROR:", e);
         conn.sendMessage(m.chat, {
-            text: "❌ *Error while processing video*"
+            text: "❌ *Error while processing video*\nPlease try again later."
         }, { quoted: mek });
     }
 });
