@@ -9,64 +9,72 @@ cmd({
     category: "download",
     react: "🎬",
     filename: __filename
-}, async (conn, mek, m, { from, reply, text, args, q }) => {
+},
+async (conn, mek, m) => {
     try {
-        const query = q || args.join(" ");
-        if (!query) {
-            return reply("❌ *Search With Query*\nExample:\n.video pasoori");
+        const from = m.chat;
+        const q = m.text?.split(' ').slice(1).join(' ');
+
+        if (!q) {
+            return conn.sendMessage(from, {
+                text: "❌ *Search With Query*\nExample:\n.video pasoori"
+            }, { quoted: mek });
         }
 
         // 🔍 Search
-        const search = await yts(query);
-        if (!search.videos || !search.videos.length) {
-            return reply("❌ *No video found*");
+        const search = await yts(q);
+        if (!search.videos.length) {
+            return conn.sendMessage(from, {
+                text: "❌ *No video found*"
+            }, { quoted: mek });
         }
 
         const vid = search.videos[0];
 
-        // Thumbnail message (without quoted)
+        // 🎨 BOSS X MD INFO
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
-            caption: `🎬 *${vid.title}*\n⏱️ ${vid.timestamp}\n⬇️ Downloading video...`
-        });
+            caption: `
+╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
+┃🎬 *VIDEO FOUND*
+┃📌 *Title:* ${vid.title}
+┃⏱️ *Duration:* ${vid.timestamp}
+┃⏳ *Processing...*
+╰━━━━━━━━━━━━━━⊷
+> © Powered By Boss-MD
+`
+        }, { quoted: mek });
 
-        await conn.sendMessage(from, {
-            react: { text: "⏳", key: mek.key }
-        });
-
-        // API call
+        // 🎥 API
         const apiUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`;
-        const res = await axios.get(apiUrl, { timeout: 60000 });
+        const res = await axios.get(apiUrl);
 
-        if (
-            !res.data ||
-            !res.data.status ||
-            !res.data.result ||
-            !res.data.result.download ||
-            !res.data.result.download.url
-        ) {
-            return reply("❌ *Video API failed*");
+        if (!res.data?.status) {
+            return conn.sendMessage(from, {
+                text: "❌ *Video API failed*"
+            }, { quoted: mek });
         }
 
         const dl = res.data.result.download;
-        const meta = res.data.result.metadata || {};
 
-        // Send video (with quoted mek)
+        // 📤 SEND VIDEO
         await conn.sendMessage(from, {
             video: { url: dl.url },
             mimetype: "video/mp4",
-            caption: `🎬 *${meta.title || vid.title}*\n🎞️ ${dl.quality || "360p"} | ⏱️ ${meta.duration || vid.timestamp}\n⚡ BOSS-MD`
+            caption: `
+╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
+┃🎬 *${vid.title}*
+┃🎞️ *Quality:* ${dl.quality || "360p"}
+┃⏱️ *Duration:* ${vid.timestamp}
+╰━━━━━━━━━━━━━━⊷
+> © Powered By Boss-MD
+`
         }, { quoted: mek });
 
-        await conn.sendMessage(from, {
-            react: { text: "✅", key: mek.key }
-        });
-
-    } catch (err) {
-        console.error("VIDEO ERROR:", err);
-        reply("❌ *Video processing error*\nPlease try again later.");
-        await conn.sendMessage(from, {
-            react: { text: "❌", key: mek.key }
-        });
+    } catch (e) {
+        console.log(e);
+        conn.sendMessage(m.chat, {
+            text: "❌ *Error while processing video*"
+        }, { quoted: mek });
     }
 });
