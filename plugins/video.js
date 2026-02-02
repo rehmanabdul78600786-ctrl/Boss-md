@@ -13,7 +13,8 @@ cmd({
     try {
         const query = q || args.join(" ");
         if (!query) {
-            return reply("❌ *Search With Query*\nExample: .video pasoori");
+            return reply("👀 𝘽𝙊𝙎𝙎-𝙈𝘿 chapri Kuch or leta tu bot use krna a jata
+❌ *Search With Query*\nExample: .video pasoori");
         }
 
         // Search
@@ -29,12 +30,12 @@ cmd({
             react: { text: "⏳", key: mek.key }
         });
 
-        // FIRST: Send thumbnail with details
+        // FIRST: Send thumbnail with FULL details
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
             caption: `
 ╔═══════════════════════════╗
-║       🎬 BOSS-MD VIDEO      ║
+║       🎬 VIDEO DETAILS      ║
 ╚═══════════════════════════╝
 
 📌 *Title:* ${vid.title}
@@ -42,6 +43,7 @@ cmd({
 ⏱️ *Duration:* ${vid.timestamp}
 👁️ *Views:* ${vid.views}
 📅 *Uploaded:* ${vid.ago}
+🔗 *URL:* ${vid.url}
 
 ⬇️ *Downloading video...*
 ⏳ Please wait...
@@ -86,29 +88,11 @@ cmd({
             return reply("❌ *Download failed*\nTry again later.");
         }
 
-        // SECOND: Send video with details
+        // SECOND: Send video with FEW details
         await conn.sendMessage(from, {
             video: { url: videoUrl },
             mimetype: "video/mp4",
-            caption: `
-╔═══════════════════════════╗
-║     📥 VIDEO DOWNLOADED     ║
-╚═══════════════════════════╝
-
-📹 *Title:* ${vid.title}
-🎞️ *Quality:* ${quality}
-⏱️ *Duration:* ${vid.timestamp}
-📊 *Size:* Processing...
-
-✅ *Download Status:*
-🎯 Status: Successful
-⚡ Speed: High Speed
-🔧 API: Working
-
-🎛️ *BOSS-MD System*
-🔧 Version: v3.5
-🚀 Powered by BOSS-MD
-`
+            caption: `🎬 ${vid.title}\n🎞️ ${quality} | ⏱️ ${vid.timestamp}\n⚡ BOSS-MD`
         }, { quoted: mek });
 
         // Success reaction
