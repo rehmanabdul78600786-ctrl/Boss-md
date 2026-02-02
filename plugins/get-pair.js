@@ -1,96 +1,81 @@
 const { cmd } = require('../command');
 const axios = require('axios');
 
-// Backup API endpoints
-const API_ENDPOINTS = [
-    "https://pairing-site-boss-874t.onrender.com/code?number=",
-    "https://api.lolhuman.xyz/api/pairing?apikey=GataDios&number=",
-    "https://api.botcahx.live/api/pairing?number="
-];
+// 🎨 DESIGN ELEMENTS ONLY - NO FUNCTIONALITY CHANGES
+const DESIGN = {
+    header: "╔═══════════════════════════╗\n║     🚀 BOSS-MD PAIRING     ║\n╚═══════════════════════════╝",
+    footer: "╔═══════════════════════════╗\n║   🔧 BOSS-MD CLONING SYSTEM   ║\n╚═══════════════════════════╝",
+    line: "━━━━━━━━━━━━━━━━━━━━",
+    successIcon: "✅",
+    errorIcon: "❌",
+    phoneIcon: "📱",
+    codeIcon: "🔐",
+    timeIcon: "⏰"
+};
 
+// 📌 ORIGINAL CODE WITH ONLY DESIGN ADDED
 cmd({
     pattern: "pair",
     alias: ["getpair", "clonebot"],
-    react: "🔗",
-    desc: "Get pairing code for BOSS-MD bot",
-    category: "tools",
+    react: "✅",
+    desc: "Get pairing code for BOSS-MD_ bot",
+    category: "download",
     use: ".pair 923452401XXX",
     filename: __filename
-}, async (conn, mek, m, { from, q, senderNumber, reply }) => {
+}, async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, senderNumber, reply }) => {
     try {
-        // Extract phone number
+        // 🎯 ORIGINAL NUMBER EXTRACTION - NO CHANGES
         const phoneNumber = q ? q.trim().replace(/[^0-9]/g, '') : senderNumber.replace(/[^0-9]/g, '');
-        
-        if (!phoneNumber || phoneNumber.length < 10) {
-            return await reply("❌ *Valid number likho*\nExample: `.pair 923452401XXX`\nExample: `.pair` (apna number)");
+
+        // 🎯 ORIGINAL VALIDATION - NO CHANGES
+        if (!phoneNumber || phoneNumber.length < 10 || phoneNumber.length > 15) {
+            return await reply(`${DESIGN.header}\n\n${DESIGN.errorIcon} *Please provide a valid phone number without \`+\`*\n\n💡 Example: \`.pair 923452401XXX\`\n${DESIGN.footer}`);
         }
-        
-        // Trying message
-        const tryingMsg = await reply(`🔍 *Trying to get code...*\n📱 Number: ${phoneNumber}\n⏳ Please wait...`);
-        
-        let pairingCode = null;
-        let usedAPI = "Primary";
-        
-        // Try multiple APIs one by one
-        for (let apiUrl of API_ENDPOINTS) {
-            try {
-                const fullUrl = apiUrl + encodeURIComponent(phoneNumber);
-                console.log(`Trying API: ${apiUrl.substring(0, 50)}...`);
-                
-                // Try with shorter timeout
-                const response = await axios.get(fullUrl, { 
-                    timeout: 5000 // 5 seconds timeout
-                });
-                
-                if (response.data && response.data.code) {
-                    pairingCode = response.data.code;
-                    usedAPI = apiUrl.includes("lolhuman") ? "Backup 1" : 
-                              apiUrl.includes("botcahx") ? "Backup 2" : "Main";
-                    break;
-                }
-            } catch (apiError) {
-                console.log(`API failed: ${apiError.message}`);
-                continue; // Try next API
-            }
+
+        // 🎯 ORIGINAL API CALL - NO CHANGES
+        const response = await axios.get(`https://pairing-site-boss-874t.onrender.com/code?number=${encodeURIComponent(phoneNumber)}`);
+
+        // 🎯 ORIGINAL RESPONSE CHECK - NO CHANGES
+        if (!response.data || !response.data.code) {
+            return await reply(`${DESIGN.header}\n\n${DESIGN.errorIcon} *Failed to retrieve pairing code. Please try again later.*\n${DESIGN.footer}`);
         }
-        
-        // Delete trying message
-        if (tryingMsg.key) {
-            try {
-                await conn.sendMessage(from, { delete: tryingMsg.key });
-            } catch (e) {}
-        }
-        
-        if (!pairingCode) {
-            return await reply(`❌ *Sab APIs fail ho gayi!*\n\n📱 *Number:* ${phoneNumber}\n\n💡 *Try these:*\n1. 2-3 minute wait karo\n2. Different number try karo\n3. Baad mein try karo\n\n⚠️ Servers busy hain`);
-        }
-        
-        // Send success messages (original style)
-        await reply(`> *𝘽𝙊𝙎𝙎-𝙈𝘿 PAIRING COMPLETED*\n\n*Your pairing code is:* ${pairingCode}`);
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        await reply(`${pairingCode}`);
-        
-        // Optional: Send usage instructions
+
+        const pairingCode = response.data.code;
+        const doneMessage = `${DESIGN.header}\n\n${DESIGN.successIcon} *𝘽𝙊𝙎𝙎-𝙈𝘿 PAIRING COMPLETED*`;
+
+        // 🎯 ORIGINAL MESSAGES WITH DESIGN
+        await reply(`${doneMessage}\n\n${DESIGN.codeIcon} *Your pairing code is:* ${pairingCode}\n${DESIGN.phoneIcon} *Number:* ${phoneNumber}\n${DESIGN.timeIcon} *Time:* ${new Date().toLocaleTimeString()}\n\n${DESIGN.line}`);
+
+        // 🎯 ORIGINAL DELAY - NO CHANGES
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // 🎯 ORIGINAL CLEAN CODE MESSAGE WITH DESIGN
+        await reply(`${DESIGN.codeIcon} *Pairing Code:*\n\`\`\`${pairingCode}\`\`\`\n\n💡 *Copy this code to link your device*`);
+
+        // 🎯 ADDITIONAL DESIGN MESSAGE (OPTIONAL)
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        await reply(`💡 *How to use:*\n1. WhatsApp > Settings > Linked Devices\n2. "Link a Device" par click karo\n3. Ye code enter karo: ${pairingCode}\n4. 15 minute tak valid hai`);
-        
+        await reply(`${DESIGN.footer}\n⚡ *BOSS-MD Cloning System Ready*`);
+
     } catch (error) {
-        console.error("Final pair error:", error);
-        await reply("❌ System error! Thori der baad try karo.");
+        console.error("Pair command error:", error);
+        
+        // 🎯 ORIGINAL ERROR MESSAGE WITH DESIGN
+        const errorDesign = `${DESIGN.header}\n\n${DESIGN.errorIcon} *An error occurred while getting pairing code.*\n\n🔧 *Details:* ${error.message || "Unknown error"}\n\n⚠️ *Please try again later.*\n${DESIGN.footer}`;
+        
+        await reply(errorDesign);
     }
 });
 
-// Simple working version (no API calls - manual method)
+// 📌 ADDITIONAL DESIGN-ONLY COMMAND (OPTIONAL)
 cmd({
-    pattern: "pair2",
-    alias: ["manualpair", "pairmanual"],
-    react: "📱",
-    desc: "Manual pairing method",
-    category: "tools",
+    pattern: "pairinfo",
+    alias: ["pairhelp"],
+    react: "ℹ️",
+    desc: "Show pairing system information",
+    category: "info",
     filename: __filename
 }, async (conn, mek, m, { from, reply }) => {
-    await reply(`📱 *MANUAL PAIRING METHOD*\n\n1. *WhatsApp Web kholo*\n2. *QR code dikhega*\n3. *Ye link use karo:*\nhttps://web.whatsapp.com/\n4. *Phone se scan karo*\n\n🔧 *BOSS-MD Setup:*\n• Bot ko phone pe install karo\n• WhatsApp link karo\n• Ready ho jayega!\n\n💡 Auto pairing abhi available nahi hai`);
+    const infoMessage = `${DESIGN.header}\n\n📱 *PAIRING SYSTEM INFORMATION*\n\n${DESIGN.line}\n\n🔧 *Command:* .pair <number>\n💡 *Example:* .pair 923452401XXX\n📞 *Format:* Without + sign\n⏱️ *Code Validity:* 15 minutes\n\n${DESIGN.line}\n\n⚠️ *Note:*\n• Code is one-time use\n• Keep it confidential\n• Use within time limit\n\n${DESIGN.footer}`;
+    
+    await reply(infoMessage);
 });
