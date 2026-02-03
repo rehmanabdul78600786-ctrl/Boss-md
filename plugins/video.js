@@ -1,99 +1,120 @@
-const { cmd } = require('../command');
-const { spawn } = require('child_process');
-const yts = require('yt-search');
-const fs = require('fs');
+const { cmd } = require('../command')
+const axios = require('axios')
+const yts = require('yt-search')
+const fs = require('fs')
+const path = require('path')
+const ffmpeg = require('fluent-ffmpeg')
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+
+ffmpeg.setFfmpegPath(ffmpegPath)
 
 cmd({
     pattern: "video",
-    alias: ["vid", "mp4", "ytmp4"],
+    alias: ["playvideo", "vid"],
     desc: "Download YouTube video",
     category: "download",
     react: "🎬",
     filename: __filename
-}, async (conn, mek, m) => {
+}, async (conn, mek, m, { from, reply, text }) => {
     try {
-        const from = m.chat;
-        const query = m.text?.split(' ').slice(1).join(' ');
-
-        if (!query) {
-            return conn.sendMessage(from, { text: "❌ *Search With Query*\nExample:\n.video pasoori" }, { quoted: mek });
+        if (!text) {
+            return reply("❌ *Video name likho*\nExample:\n.video phir chala")
         }
 
-        // 🔍 Search YouTube
-        const search = await yts(query);
-        if (!search.videos.length) {
-            return conn.sendMessage(from, { text: "❌ *No video found*" }, { quoted: mek });
+        // 🔍 Search video
+        const search = await yts(text)
+        if (!search.videos || !search.videos.length) {
+            return reply("❌ *No video found*")
         }
 
-        const vid = search.videos[0];
+        const vid = search.videos[0]
 
-        // 🎨 Send video info first
+        // 🎨 STYLE MESSAGE (same as screenshot)
+        const caption = `
+> *𝐁𝐎𝐒𝐒-𝐌𝐃*
+────────────────────
+🎬 *VIDEO FOUND*
+
+📌 *Title:* ${vid.title}
+⏱️ *Duration:* ${vid.timestamp}
+
+⏳ *Processing video...*
+────────────────────
+> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ 🄱🄾🅂🅂-🄼🄳*
+`
+
         await conn.sendMessage(from, {
             image: { url: vid.thumbnail },
-            caption: `
-╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
-┃🎬 *VIDEO FOUND*
-┃📌 *Title:* ${vid.title}
-┃⏱️ *Duration:* ${vid.timestamp}
-┃⏳ *Downloading & Processing...*
-╰━━━━━━━━━━━━━━⊷
-> © Powered By Boss-MD
-`
-        }, { quoted: mek });
+            caption
+        }, { quoted: mek })
 
-        // 🔹 Download video via yt-dlp
-        const fileName = `./tmp_${Date.now()}.mp4`;
-        await new Promise((resolve, reject) => {
-            const ytdlp = spawn('yt-dlp', [
-                '-f', 'best[ext=mp4][height<=360]', // safe 360p
-                '-o', fileName,
-                vid.url
-            ]);
+        // 🎥 API (Arslan)
+        const api = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(vid.url)}`
+        const res = await axios.get(api, { timeout: 60000 })
 
-            ytdlp.stderr.on('data', data => console.log(data.toString()));
-            ytdlp.on('close', code => {
-                if (code === 0) resolve();
-                else reject(new Error('yt-dlp failed'));
-            });
-        });
-
-        // 🔹 Send video buffer to WhatsApp
-        const videoBuffer = fs.readFileSync(fileName);
-        await conn.sendMessage(from, {
-            video: videoBuffer,
-            mimetype: 'video/mp4',
-            caption: `
-╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
-┃🎬 *${vid.title}*
-┃🎞️ *Quality:* 360p
-┃⏱️ *Duration:* ${vid.timestamp}
-╰━━━━━━━━━━━━━━⊷
-> © Powered By Boss-MD
-`
-        }, { quoted: mek });
-
-        // 🔹 Cleanup
-        fs.unlinkSync(fileName);
-
-    } catch (e) {
-        console.error("VIDEO ERROR:", e);
-
-        // Fallback: send as document
-        try {
-            const fallbackUrl = `https://arslan-apis.vercel.app/download/ytmp4?url=${encodeURIComponent(m.text?.split(' ').slice(1).join(' '))}`;
-            await conn.sendMessage(m.chat, {
-                document: { url: fallbackUrl },
-                mimetype: 'video/mp4',
-                fileName: `Video_Fallback.mp4`,
-                caption: `
-╔ஜ۩▒█ ʙᴏꜱꜱ X ᴍᴅ █▒۩ஜ╗
-┃🎬 *Sent as document (WhatsApp video failed)*
-╰━━━━━━━━━━━━━━⊷
-> © Powered By Boss-MD
-`
-            }, { quoted: mek });
-        } catch {
-            conn.sendMessage(m.chat, { text: "❌ *Video failed and fallback failed too*" }, { quoted: mek });
+        if (!res.data?.status || !res.data?.result?.download?.url) {
+            return reply("❌ *Video API failed*")
         }
+
+        const videoUrl = res.data.result.download.url
+
+        // 📂 temp
+        const tempDir = path.join(__dirname, '../temp')
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir)
+
+        const rawPath = path.join(tempDir, `raw_${Date.now()}.mp4`)
+        const finalPath = path.join(tempDir, `final_${Date.now()}.mp4`)
+
+        // ⬇ Download video
+        const stream = await axios({
+            url: videoUrl,
+            method: "GET",
+            responseType: "stream",
+            timeout: 120000
+        })
+
+        await new Promise((resolve, reject) => {
+            const w = fs.createWriteStream(rawPath)
+            stream.data.pipe(w)
+            w.on('finish', resolve)
+            w.on('error', reject)
+        })
+
+        // 🛠️ FFMPEG FIX (BLACK SCREEN SOLUTION)
+        await new Promise((resolve, reject) => {
+            ffmpeg(rawPath)
+                .outputOptions([
+                    '-map 0:v:0',
+                    '-map 0:a:0?',
+                    '-movflags +faststart',
+                    '-pix_fmt yuv420p',
+                    '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2',
+                    '-profile:v baseline',
+                    '-level 3.0'
+                ])
+                .videoCodec('libx264')
+                .audioCodec('aac')
+                .audioBitrate('128k')
+                .videoBitrate('900k')
+                .format('mp4')
+                .on('end', resolve)
+                .on('error', reject)
+                .save(finalPath)
+        })
+
+        // 📤 Send video
+        await conn.sendMessage(from, {
+            video: fs.readFileSync(finalPath),
+            mimetype: "video/mp4",
+            caption: `🎬 *${vid.title}*\n\n> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙰𝙽𝙰𝚈𝙰𝚃-𝙰𝙸*`
+        }, { quoted: mek })
+
+        // 🧹 cleanup
+        fs.unlinkSync(rawPath)
+        fs.unlinkSync(finalPath)
+
+    } catch (err) {
+        console.error(err)
+        reply("❌ *Video processing error*")
     }
-});
+})
