@@ -31,15 +31,15 @@ cmd({
 
         // 🎨 STYLE MESSAGE (same as screenshot)
         const caption = `
-> *𝐁𝐎𝐒𝐒-𝐌𝐃*
-────────────────────
-🎬 *VIDEO FOUND*
+>*╔ஜ۩▒█ boss X ᴍᴅ █▒۩ஜ╗*
+  ────────────────────
+  🎬 *VIDEO FOUND*
 
-📌 *Title:* ${vid.title}
-⏱️ *Duration:* ${vid.timestamp}
+  📌 *Title:* ${vid.title}
+  ⏱️ *Duration:* ${vid.timestamp}
 
-⏳ *Processing video...*
-────────────────────
+  ⏳ *Processing video...*
+ ────────────────────
 > *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ 🄱🄾🅂🅂-🄼🄳*
 `
 
@@ -106,7 +106,7 @@ cmd({
         await conn.sendMessage(from, {
             video: fs.readFileSync(finalPath),
             mimetype: "video/mp4",
-            caption: `🎬 *${vid.title}*\n\n> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙰𝙽𝙰𝚈𝙰𝚃-𝙰𝙸*`
+            caption: `🎬 *${vid.title}*\n\n> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ 🄱🄾🅂🅂-🄼🄳*`
         }, { quoted: mek })
 
         // 🧹 cleanup
