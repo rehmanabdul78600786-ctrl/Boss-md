@@ -8,37 +8,34 @@ cmd({
     react: "⬆️",
     filename: __filename
 },
-async (Void, citel) => {
+async (Void, citel, text) => {
     try {
-        if (!citel.isGroup)
-            return citel.reply("❌ Group only command!");
+        if (!citel.isGroup) return citel.reply("❌ This command only works in groups!");
+        
+        // Check if sender is admin
+        const groupAdmins = await Void.groupMetadata(citel.chat).then(m => m.participants.filter(p => p.admin).map(p => p.id));
+        if (!groupAdmins.includes(citel.sender)) return citel.reply("❌ Only admins can promote members!");
 
-        // ❌ admin check
-        // ❌ NO bot admin check
-        // WhatsApp khud handle karega
-
+        // Get target user
         let target;
         if (citel.quoted) {
             target = citel.quoted.sender;
         } else if (citel.mentionedJid && citel.mentionedJid[0]) {
             target = citel.mentionedJid[0];
         } else {
-            return citel.reply("❌ Reply ya mention karo!");
+            return citel.reply("❌ Please reply to a message or mention a user!");
         }
 
-        await Void.groupParticipantsUpdate(
-            citel.chat,
-            [target],
-            "promote"
-        );
+        // Promote the user
+        await Void.groupParticipantsUpdate(citel.chat, [target], "promote");
+        
+        // Success message with mention
+        return citel.reply(`✅ @${target.split('@')[0]} has been promoted to admin!`, { 
+            mentions: [target] 
+        });
 
-        return citel.reply(
-            `✅ @${target.split("@")[0]} admin bana diya`,
-            { mentions: [target] }
-        );
-
-    } catch (e) {
-        console.log("PROMOTE ERROR =>", e);
-        citel.reply("❌ Promote fail (WhatsApp ne reject kar diya)");
+    } catch (error) {
+        console.error("Promote Error:", error);
+        return citel.reply("❌ Failed to promote user. Please try again.");
     }
 });
