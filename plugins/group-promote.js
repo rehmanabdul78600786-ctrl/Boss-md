@@ -36,6 +36,6 @@ async (Void, citel, text) => {
 
     } catch (error) {
         console.error("Promote Error:", error);
-        return citel.reply("❌ Failed to promote user. Please try again.");
+        return citel.reply("❌ Failed to promote user. Please try again user bc LG rha ha ju hu hi nai rha promote.");
     }
 });
