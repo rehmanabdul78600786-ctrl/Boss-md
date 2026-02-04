@@ -13,7 +13,7 @@ async (Void, citel) => {
         if (!citel.isGroup)
             return citel.reply("❌ Group only command!");
 
-        // ❌ NO admin check
+        // ❌ admin check
         // ❌ NO bot admin check
         // WhatsApp khud handle karega
 
