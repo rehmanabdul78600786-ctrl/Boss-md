@@ -19,26 +19,29 @@ cmd({
     }
 
     // Only act in groups where bot is admin and sender isn't admin
-    if (!isGroup || isAdmins || !isBotAdmins) {
+    if (!isGroup || isAdmins) return;
+    const botJid = conn.user.id.split(':')[0] + '@s.whatsapp.net';
+    if (!isBotAdmins) {
+      console.log("❌ Bot must be admin to delete links");
       return;
     }
 
     // List of link patterns to detect
     const linkPatterns = [
-      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi, // WhatsApp links
-      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,  // WhatsApp API links
-      /wa\.me\/\S+/gi,                                    // WhatsApp.me links
-      /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,         // Telegram links
-      /https?:\/\/(?:www\.)?\.com\/\S+/gi,                // Generic .com links
-      /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,         // Twitter links
-      /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,        // LinkedIn links
-      /https?:\/\/(?:whatsapp\.com|channel\.me)\/\S+/gi,  // Other WhatsApp/channel links
-      /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,          // Reddit links
-      /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,         // Discord links
-      /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,           // Twitch links
-      /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,           // Vimeo links
-      /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,     // Dailymotion links
-      /https?:\/\/(?:www\.)?medium\.com\/\S+/gi           // Medium links
+      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi, 
+      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,  
+      /wa\.me\/\S+/gi,                                    
+      /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,         
+      /https?:\/\/(?:www\.)?\.com\/\S+/gi,                
+      /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,         
+      /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,        
+      /https?:\/\/(?:whatsapp\.com|channel\.me)\/\S+/gi,  
+      /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,          
+      /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,         
+      /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,           
+      /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,           
+      /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,     
+      /https?:\/\/(?:www\.)?medium\.com\/\S+/gi           
     ];
 
     // Check if message contains any forbidden links
@@ -50,9 +53,7 @@ cmd({
 
       // Try to delete the message
       try {
-        await conn.sendMessage(from, {
-          delete: m.key
-        });
+        await conn.sendMessage(from, { delete: m.key });
         console.log(`Message deleted: ${m.key.id}`);
       } catch (error) {
         console.error("Failed to delete message:", error);
@@ -64,7 +65,6 @@ cmd({
 
       // Handle warnings
       if (warningCount < 4) {
-        // Send warning message
         await conn.sendMessage(from, {
           text: `‎*⚠️LINKS ARE NOT ALLOWED⚠️*\n` +
                 `*╭────⬡ WARNING ⬡────*\n` +
@@ -76,7 +76,6 @@ cmd({
           mentions: [sender]
         });
       } else {
-        // Remove user if they exceed warning limit
         await conn.sendMessage(from, {
           text: `@${sender.split('@')[0]} *HAS BEEN REMOVED - WARN LIMIT EXCEEDED!*`,
           mentions: [sender]
@@ -88,5 +87,21 @@ cmd({
   } catch (error) {
     console.error("Anti-link error:", error);
     reply("❌ An error occurred while processing the message.");
+  }
+});
+
+// ===== OWNER INBOX DELETE DETECTOR =====
+conn.ev.on('messages.update', async (updates) => {
+  if (!global.ownerAntiDelete) return;
+
+  for (const u of updates) {
+    if (u.update?.message === null) {
+      const data = global.ownerMsgStore.get(u.key.id);
+      if (!data) continue;
+
+      const text = `🗑️ *Message Deleted*\n\n👤 From: ${data.sender}\n📍 Chat: ${data.jid}`;
+      await conn.sendMessage(conn.user.id, { text }).catch(() => {});
+      await conn.sendMessage(conn.user.id, data.message).catch(() => {});
+    }
   }
 });
