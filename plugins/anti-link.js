@@ -2,35 +2,36 @@ const { cmd } = require('../command');
 const config = require("../config");
 
 cmd({
-  'on': "body"
-}, async (conn, m, store, {
-  from,
-  body,
-  sender,
-  isGroup,
-  isAdmins,
-  isBotAdmins,
-  reply
-}) => {
+  on: "body"
+}, async (conn, m, store, { from, body, sender, isGroup, isAdmins, isBotAdmins, reply }) => {
   try {
     // Initialize warnings if not exists
-    if (!global.warnings) {
-      global.warnings = {};
-    }
+    if (!global.warnings) global.warnings = {};
 
-    // Only act in groups where bot is admin and sender isn't admin
-    if (!isGroup || isAdmins) return;
+    // Only act in groups
+    if (!isGroup) return;
+
+    // ✅ Correct bot admin check
     const botJid = conn.user.id.split(':')[0] + '@s.whatsapp.net';
-    if (!isBotAdmins) {
-      console.log("❌ Bot must be admin to delete links");
-      return;
+    const groupMetadata = await conn.groupMetadata(from).catch(() => null);
+    const participants = groupMetadata?.participants || [];
+    const groupAdmins = participants.filter(u => u.admin !== null).map(u => u.id);
+    const botIsAdmin = groupAdmins.includes(botJid);
+
+    if (!botIsAdmin) {
+      return reply("❌ Bot must be an admin to use this command.");
     }
 
-    // List of link patterns to detect
+    // Only block if sender isn't admin
+    if (isAdmins) return;
+
+    // Link detection
     const linkPatterns = [
-      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi, 
-      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,  
-      /wa\.me\/\S+/gi,                                    
+      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
+      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,
+      /wa\.me\/\S+/gi,
+      /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi
+/wa\.me\/\S+/gi,                                    
       /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,         
       /https?:\/\/(?:www\.)?\.com\/\S+/gi,                
       /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,         
@@ -43,27 +44,22 @@ cmd({
       /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,     
       /https?:\/\/(?:www\.)?medium\.com\/\S+/gi           
     ];
-
-    // Check if message contains any forbidden links
     const containsLink = linkPatterns.some(pattern => pattern.test(body));
 
-    // Only proceed if anti-link is enabled and link is detected
     if (containsLink && config.ANTI_LINK === 'true') {
       console.log(`Link detected from ${sender}: ${body}`);
 
-      // Try to delete the message
+      // Delete message
       try {
-        await conn.sendMessage(from, { delete: m.key });
-        console.log(`Message deleted: ${m.key.id}`);
+        await conn.sendMessage(from, { delete: m.key }).catch(() => {});
       } catch (error) {
         console.error("Failed to delete message:", error);
       }
 
-      // Update warning count for user
+      // Update warning count
       global.warnings[sender] = (global.warnings[sender] || 0) + 1;
       const warningCount = global.warnings[sender];
 
-      // Handle warnings
       if (warningCount < 4) {
         await conn.sendMessage(from, {
           text: `‎*⚠️LINKS ARE NOT ALLOWED⚠️*\n` +
@@ -87,21 +83,5 @@ cmd({
   } catch (error) {
     console.error("Anti-link error:", error);
     reply("❌ An error occurred while processing the message.");
-  }
-});
-
-// ===== OWNER INBOX DELETE DETECTOR =====
-conn.ev.on('messages.update', async (updates) => {
-  if (!global.ownerAntiDelete) return;
-
-  for (const u of updates) {
-    if (u.update?.message === null) {
-      const data = global.ownerMsgStore.get(u.key.id);
-      if (!data) continue;
-
-      const text = `🗑️ *Message Deleted*\n\n👤 From: ${data.sender}\n📍 Chat: ${data.jid}`;
-      await conn.sendMessage(conn.user.id, { text }).catch(() => {});
-      await conn.sendMessage(conn.user.id, data.message).catch(() => {});
-    }
   }
 });
