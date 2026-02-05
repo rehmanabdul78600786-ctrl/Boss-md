@@ -9,7 +9,6 @@ cmd({
   sender,
   isGroup,
   isAdmins,
-  isBotAdmins,
   reply
 }) => {
   try {
@@ -17,16 +16,16 @@ cmd({
 
     if (!isGroup) return; // Skip if not group
 
-    // Ensure we have group metadata to check admins
+    // ✅ Proper Bot Admin Check
     const groupMetadata = await conn.groupMetadata(from).catch(() => null);
     const participants = groupMetadata?.participants || [];
-    const groupAdmins = await getGroupAdmins(participants); // helper function from your bot
+    const groupAdmins = participants.filter(p => p.admin !== null).map(p => p.id);
     const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net';
     const isBotAdmin = groupAdmins.includes(botNumber);
 
     if (!isBotAdmin) return reply("❌ Bot must be an admin to use this command.");
 
-    // FULL LINK PATTERNS RESTORED
+    // Full link patterns (original style)
     const linkPatterns = [
       /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
       /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,
@@ -49,7 +48,7 @@ cmd({
     if (containsLink && config.ANTI_LINK === 'true') {
       console.log(`Link detected from ${sender}: ${body}`);
 
-      // Try to delete message
+      // Delete message
       try {
         await conn.sendMessage(from, { delete: m.key });
       } catch (error) {
