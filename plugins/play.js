@@ -55,7 +55,7 @@ cmd({
             caption:
                 `🎵 *${meta.title}*\n` +
                 `🎚️ Quality: ${quality}\n\n` +
-                `> © Arslan-MD`,
+                `> © 𝐁𝐎𝐒𝐒-𝐌𝐃`,
             contextInfo: {
                 externalAdReply: {
                     title: meta.title.length > 40
@@ -74,7 +74,7 @@ cmd({
 
     } catch (err) {
         console.error("PLAY ERROR:", err);
-        reply("❌ Error Founded Please Try later Or Reported Now My Owner ArslanMD Official 🇵🇰");
+        reply("❌ Error Founded Please Try later Or Reported Now My Owner 🄱🄾🅂🅂-🄼🄳 Official 😎");
         await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
     }
 });
