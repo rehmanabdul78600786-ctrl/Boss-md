@@ -119,6 +119,9 @@ const os = require('os');
 const Crypto = require('crypto');
 const path = require('path');
 const prefix = config.PREFIX;
+// ===== OWNER INBOX ANTI DELETE =====
+global.ownerAntiDelete = false
+global.ownerMsgStore = new Map()
 
 const ownerNumber = ['923076411099'];
 
@@ -316,6 +319,24 @@ async function connectToWA() {
         fireInitQueries: false,
         retryRequestDelayMs: 100
     });
+   // ================= CREDENTIALS UPDATE =================
+    conn.ev.on('creds.update', saveCreds);
+
+    // ================= OWNER INBOX DELETE DETECTOR =================
+    conn.ev.on('messages.update', async (updates) => {
+        if (!global.ownerAntiDelete) return;
+
+        for (const u of updates) {
+            if (u.update?.message === null) {
+                const data = global.ownerMsgStore.get(u.key.id);
+                if (!data) continue;
+
+                const text = `🗑️ *Message Deleted*\n\n👤 From: ${data.sender}\n📍 Chat: ${data.jid}`;
+                await conn.sendMessage(conn.user.id, { text }).catch(() => {});
+                await conn.sendMessage(conn.user.id, data.message).catch(() => {});
+            }
+        }
+    });
     
     conn.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
@@ -400,13 +421,34 @@ async function connectToWA() {
     });
 
     // MESSAGE HANDLER - ULTRA OPTIMIZED
-    conn.ev.on('messages.upsert', async (mekData) => {
-        // 🔥 ULTRA FAST QUEUE SYSTEM ADDED
-        const message = mekData.messages[0];
-        if (message) {
-            msgQueue.push(message);
-            if (msgQueue.length === 1) processQueue();
+conn.ev.on('messages.upsert', async (mekData) => {
+
+    // ===== OWNER ANTI-DELETE SAVE =====
+    try {
+        const msg = mekData.messages?.[0]
+        if (
+            msg &&
+            msg.message &&
+            msg.key &&
+            msg.key.id &&
+            msg.key.remoteJid !== 'status@broadcast'
+        ) {
+            global.ownerMsgStore.set(msg.key.id, {
+                jid: msg.key.remoteJid,
+                sender: msg.key.participant || msg.key.remoteJid,
+                message: msg.message
+            })
         }
+    } catch {}
+
+    // 🔥 ULTRA FAST QUEUE SYSTEM ADDED
+    const message = mekData.messages[0];
+    if (message) {
+        msgQueue.push(message);
+        if (msgQueue.length === 1) processQueue();
+    }
+
+    // ===== REST OF YOUR ULTRA HANDLER CONTINUES =====
         
         // ✅ ORIGINAL HANDLER STILL ACTIVE (NO DELETIONS)
         try {
@@ -919,9 +961,7 @@ async function startWhatsAppBot() {
         console.log('❌ Bot startup error:', error.message);
     }
 }
-
-// 3. BOT KO START KARO
-// Agar aapka existing start function hai to usko comment kardo
+//boss ia a powerful man 
 // startBot(); // Purana function comment kardo
 startWhatsAppBot(); // Naya function chalado
     
