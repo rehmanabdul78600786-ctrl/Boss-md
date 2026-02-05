@@ -1,17 +1,17 @@
 module.exports = (conn) => {
     // ✅ GLOBAL SETTINGS
-    global.ownerAntiDelete = true; // Owner anti-delete ON
+    global.ownerAntiDelete = true; // owner-Anti-delete ON
     global.ownerMsgStore = global.ownerMsgStore || new Map();
 
-    const ownerNumber = ['923076411099']; // Owner number yaha daal
+    const ownerNumber = ['923076411099']; // Apna number yaha daal (country code ke saath)
 
-    // SAVE INCOMING MESSAGES
+    // 1️⃣ SAVE ALL INCOMING MESSAGES
     conn.ev.on('messages.upsert', async (mekData) => {
         try {
             const msg = mekData.messages?.[0];
             if (!msg || !msg.message || msg.key.remoteJid === 'status@broadcast') return;
 
-            // Save message in memory
+            // Save message in memory by message ID
             global.ownerMsgStore.set(msg.key.id, {
                 jid: msg.key.remoteJid,
                 sender: msg.key.participant || msg.key.remoteJid,
@@ -22,7 +22,7 @@ module.exports = (conn) => {
         }
     });
 
-    // DETECT DELETED MESSAGES
+    // 2️⃣ DETECT DELETED MESSAGES
     conn.ev.on('messages.update', async (updates) => {
         try {
             if (!global.ownerAntiDelete) return;
@@ -33,9 +33,10 @@ module.exports = (conn) => {
                     if (!data) continue;
 
                     const text = `🗑️ *Message Deleted*\n\n👤 From: ${data.sender}\n📍 Chat: ${data.jid}`;
-                    // Send deleted message info to owner inbox
-                    await conn.sendMessage(conn.user.id, { text }).catch(() => {});
-                    await conn.sendMessage(conn.user.id, data.message).catch(() => {});
+
+                    // Send notification + original message to owner
+                    await conn.sendMessage(ownerNumber[0] + '@s.whatsapp.net', { text }).catch(() => {});
+                    await conn.sendMessage(ownerNumber[0] + '@s.whatsapp.net', data.message).catch(() => {});
                 }
             }
         } catch (err) {
