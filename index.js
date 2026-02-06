@@ -319,24 +319,6 @@ async function connectToWA() {
         fireInitQueries: false,
         retryRequestDelayMs: 100
     });
-   // ================= CREDENTIALS UPDATE =================
-    conn.ev.on('creds.update', saveCreds);
-
-    // ================= OWNER INBOX DELETE DETECTOR =================
-    conn.ev.on('messages.update', async (updates) => {
-        if (!global.ownerAntiDelete) return;
-
-        for (const u of updates) {
-            if (u.update?.message === null) {
-                const data = global.ownerMsgStore.get(u.key.id);
-                if (!data) continue;
-
-                const text = `🗑️ *Message Deleted*\n\n👤 From: ${data.sender}\n📍 Chat: ${data.jid}`;
-                await conn.sendMessage(conn.user.id, { text }).catch(() => {});
-                await conn.sendMessage(conn.user.id, data.message).catch(() => {});
-            }
-        }
-    });
     
     conn.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
