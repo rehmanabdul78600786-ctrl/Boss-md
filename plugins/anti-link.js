@@ -4,105 +4,101 @@ const path = require("path");
 
 // ===== File setup =====
 const DATA_FILE = path.join(__dirname, "../data/antilink.json");
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({}, null, 2));
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({}, null, 2));
+}
 
 const loadData = () => JSON.parse(fs.readFileSync(DATA_FILE));
-const saveData = (data) => fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+const saveData = (data) =>
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 
-// ===== Toggle Antilink =====
+// ===============================
+// 🔒 ANTILINK ON / OFF
+// ===============================
 cmd({
-    on: "antilink",
+    pattern: "antilink",
+    react: "🔗",
     desc: "Enable or disable antilink in group",
-    category: "group"
+    category: "group",
+    use: ".antilink on / off",
+    filename: __filename
 }, async (conn, m, store, { from, args, isGroup, isAdmins, reply }) => {
+
     if (!isGroup) return reply("❌ This command is only for groups.");
     if (!isAdmins) return reply("❌ Only admins can toggle antilink.");
 
     const data = loadData();
+
     if (args[0] === "on") {
         data[from] = true;
         saveData(data);
-        return reply("✅ Antilink has been enabled in this group.");
+        return reply("✅ *Antilink Enabled Successfully*");
     }
+
     if (args[0] === "off") {
         delete data[from];
         saveData(data);
-        return reply("❌ Antilink has been disabled in this group.");
+        return reply("❌ *Antilink Disabled Successfully*");
     }
 
-    reply("Usage:\n.antilink on / off");
+    reply("⚠️ Usage:\n.antilink on\n.antilink off");
 });
 
-// ===== Antilink Checker =====
+
+// ===============================
+// 🚫 ANTILINK AUTO CHECK
+// ===============================
 cmd({
-    on: "body" // Catch all messages
-}, async (conn, m, store, { from, body, sender, isGroup, isAdmins, reply }) => {
+    on: "body"
+}, async (conn, m, store, { from, body, sender, isGroup, isAdmins, isBotAdmins }) => {
     try {
         if (!isGroup) return;
-        if (!global.warnings) global.warnings = {};
+        if (!body) return;
 
         const data = loadData();
-        if (!data[from]) return; // Antilink not enabled in this group
-        if (isAdmins) return; // Admins bypass
+        if (!data[from]) return; // antilink off
+        if (isAdmins) return;    // admin bypass
+        if (!isBotAdmins) return;
 
-        // Fetch group metadata to check bot admin
-        const groupMetadata = await conn.groupMetadata(from).catch(() => null);
-        const participants = groupMetadata?.participants || [];
-        const groupAdmins = participants.filter(p => p.admin !== null).map(p => p.id);
-        const botJid = conn.user.id.split(':')[0] + '@s.whatsapp.net';
-        const isBotAdmin = groupAdmins.includes(botJid);
-        if (!isBotAdmin) return; // Bot must be admin to delete
+        // init warning storage
+        if (!global.warnings) global.warnings = {};
+        if (!global.warnings[from]) global.warnings[from] = {};
 
-        // Regex patterns for links
-        const linkPatterns = [
-            /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
-            /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,
-            /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,
-            /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,
-            /https?:\/\/(?:www\.)?medium\.com\/\S+/gi
-        ];
+        // SAFE LINK REGEX (NO g FLAG)
+        const linkRegex = /(https?:\/\/|wa\.me\/|chat\.whatsapp\.com\/|t\.me\/|discord\.gg\/)/i;
+        if (!linkRegex.test(body)) return;
 
-        const containsLink = linkPatterns.some(pattern => pattern.test(body));
-        if (!containsLink) return;
+        // 🗑️ Delete message
+        await conn.sendMessage(from, { delete: m.key }).catch(() => {});
 
-        // Delete the message
-        try {
-            await conn.sendMessage(from, { delete: m.key });
-        } catch (error) {
-            console.error("❌ Failed to delete message:", error);
-        }
+        // ⚠️ Warning system
+        global.warnings[from][sender] =
+            (global.warnings[from][sender] || 0) + 1;
 
-        // Warn the user
-        global.warnings[sender] = (global.warnings[sender] || 0) + 1;
-        const warnCount = global.warnings[sender];
+        const warnCount = global.warnings[from][sender];
 
         if (warnCount < 4) {
             await conn.sendMessage(from, {
-                text: `⚠️ *LINKS ARE NOT ALLOWED* ⚠️\n` +
-                      `*╭── WARNING ──*\n` +
-                      `*├ USER :* @${sender.split('@')[0]}\n` +
-                      `*├ COUNT : ${warnCount}\n` +
-                      `*├ REASON : Sending links\n` +
-                      `*├ WARN LIMIT : 3*\n` +
-                      `*╰────────────*`,
+                text:
+                    `⚠️ *LINKS NOT ALLOWED* ⚠️\n` +
+                    `*╭── WARNING ──*\n` +
+                    `*├ USER :* @${sender.split("@")[0]}\n` +
+                    `*├ COUNT : ${warnCount}\n` +
+                    `*├ REASON : Sending links*\n` +
+                    `*├ LIMIT : 3*\n` +
+                    `*╰────────────*`,
                 mentions: [sender]
             });
         } else {
             await conn.sendMessage(from, {
-                text: `@${sender.split('@')[0]} has been removed - warn limit exceeded!`,
+                text: `🚫 @${sender.split("@")[0]} removed (Warn limit exceeded)`,
                 mentions: [sender]
             });
             await conn.groupParticipantsUpdate(from, [sender], "remove");
-            delete global.warnings[sender];
+            delete global.warnings[from][sender];
         }
 
     } catch (err) {
-        console.error("❌ Anti-link error:", err);
-        reply("❌ An error occurred while processing the message.");
+        console.log("❌ Antilink Error:", err.message);
     }
 });
