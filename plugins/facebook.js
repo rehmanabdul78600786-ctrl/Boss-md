@@ -20,40 +20,25 @@ cmd({
 
     await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
 
-    // 🔥 Working API
-    const api = `https://vihangayt.me/download/fbdl?url=${encodeURIComponent(q)}`;
+    // ✅ Working API - Fast Download
+    const api = `https://api.agatz.xyz/api/facebook?url=${encodeURIComponent(q)}`;
     const { data } = await axios.get(api);
 
-    if (!data?.status || !data?.data?.video) {
+    if (!data?.status || !data?.data?.video_hd && !data?.data?.video_sd) {
       return reply("❌ Facebook video fetch nahi ho saka");
     }
 
-    const videoUrl = data.data.video;
+    // HD > SD priority
+    const videoUrl = data.data.video_hd || data.data.video_sd;
+    const quality = data.data.video_hd ? "HD" : "SD";
     const title = data.data.title || "Facebook Video";
-    const quality = data.data.quality || "HD";
-    const thumbnail = data.data.thumbnail || "";
 
-    const caption = 
-`📘 *Facebook Video Downloaded*
-╭───────────────⭓
-│ 🎬 *Title:* ${title.substring(0, 30)}
-│ 🎞 *Quality:* ${quality}
-│ 📥 *By:* BOSS-MD
-╰───────────────⭓`;
+    const caption = `📘 *FB VIDEO*\n🎬 ${title}\n🎞 ${quality}\n🤖 BOSS-MD`;
 
     await conn.sendMessage(from, {
       video: { url: videoUrl },
       mimetype: "video/mp4",
-      caption: caption,
-      contextInfo: {
-        externalAdReply: {
-          title: title.substring(0, 20),
-          body: "Facebook Downloader",
-          thumbnailUrl: thumbnail,
-          sourceUrl: q,
-          mediaType: 1
-        }
-      }
+      caption: caption
     }, { quoted: mek });
 
     await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
