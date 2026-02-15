@@ -184,7 +184,7 @@ cmd({
 cmd({
     pattern: "ping",
     desc: "Bot speed",
-    react: "🏓",
+    react: "🖕",
     category: "tools",
     filename: __filename
 }, async (conn, mek, m, { reply }) => {
