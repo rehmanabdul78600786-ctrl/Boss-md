@@ -8,110 +8,118 @@ cmd({
   category: "download",
   react: "📘",
   filename: __filename,
-}, async (conn, mek, m, { from, q, reply }) => {
+  use: ".fb <facebook url>"
+}, async (conn, m, store, { from, q, reply }) => {
   try {
     if (!q) {
-      return reply("❌ Facebook video link do\n\nExample:\n.fb https://fb.watch/xxxxx");
+      return reply(`╔═══❖═══❖═══❖═══╗
+    ░B░O░S░S░-░M░D░
+╚═══❖═══❖═══❖═══╝
+
+  ╭┅┅┅┅┅┅┅┅┅┅┅┅┅╮
+  ┆  ❌ ERROR ❌  ┆
+  ╰┅┅┅┅┅┅┅┅┅┅┅┅┅╯
+
+❌ Facebook video link do
+
+Example:
+.fb https://facebook.com/xxxx
+
+      💠 𝗕𝗢𝗦𝗦-𝗠𝗗 💠`);
     }
 
     if (!q.includes("facebook.com") && !q.includes("fb.watch")) {
-      return reply("❌ Valid Facebook URL nahi hai");
+      return reply(`╔═══❖═══❖═══❖═══╗
+    ░B░O░S░S░-░M░D░
+╚═══❖═══❖═══❖═══╝
+
+  ╭┅┅┅┅┅┅┅┅┅┅┅┅┅╮
+  ┆ ❌ INVALID URL ┆
+  ╰┅┅┅┅┅┅┅┅┅┅┅┅┅╯
+
+❌ Valid Facebook URL nahi hai
+
+      💠 𝗕𝗢𝗦𝗦-𝗠𝗗 💠`);
     }
 
-    await conn.sendMessage(from, { react: { text: "⏳", key: m.key } });
+    await conn.sendMessage(from, {
+      react: { text: "⏳", key: m.key }
+    });
 
-    let videoUrl = null;
-    let quality = "HD";
-    let title = "Facebook Video";
-    let error = null;
+    // 🔥 YOUR OWN WORKING API
+    const api = `https://arslan-apis.vercel.app/download/fbdown?url=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(api, { timeout: 60000 });
 
-    // ✅ TRY API 1: Aqul
-    try {
-      const api1 = `https://aqul.my.id/api/facebook?url=${encodeURIComponent(q)}`;
-      const { data } = await axios.get(api1, { timeout: 10000 });
-      
-      if (data?.status && (data?.result?.hd || data?.result?.sd)) {
-        videoUrl = data.result.hd || data.result.sd;
-        quality = data.result.hd ? "HD" : "SD";
-        title = data.result.title || "Facebook Video";
-        console.log("✅ API 1 working");
-      }
-    } catch (e) {
-      error = e;
-      console.log("API 1 failed");
+    if (
+      !data?.status ||
+      !data?.result?.download ||
+      (!data.result.download.hd && !data.result.download.sd)
+    ) {
+      return reply(`╔═══❖═══❖═══❖═══╗
+    ░B░O░S░S░-░M░D░
+╚═══❖═══❖═══❖═══╝
+
+  ╭┅┅┅┅┅┅┅┅┅┅┅┅┅╮
+  ┆  ❌ FAILED ❌  ┆
+  ╰┅┅┅┅┅┅┅┅┅┅┅┅┅╯
+
+❌ Facebook video fetch nahi ho saka
+
+      💠 𝗕𝗢𝗦𝗦-𝗠𝗗 💠`);
     }
 
-    // ✅ TRY API 2: Agatz (if API 1 fails)
-    if (!videoUrl) {
-      try {
-        const api2 = `https://api.agatz.xyz/api/facebook?url=${encodeURIComponent(q)}`;
-        const { data } = await axios.get(api2, { timeout: 10000 });
-        
-        if (data?.status && (data?.data?.video_hd || data?.data?.video_sd)) {
-          videoUrl = data.data.video_hd || data.data.video_sd;
-          quality = data.data.video_hd ? "HD" : "SD";
-          title = data.data.title || "Facebook Video";
-          console.log("✅ API 2 working");
-        }
-      } catch (e) {
-        console.log("API 2 failed");
-      }
-    }
+    const meta = data.result.metadata || {};
+    const dl = data.result.download;
 
-    // ✅ TRY API 3: Ryzendesu (if both APIs fail)
-    if (!videoUrl) {
-      try {
-        const api3 = `https://api.ryzendesu.vip/api/downloader/fb?url=${encodeURIComponent(q)}`;
-        const { data } = await axios.get(api3, { timeout: 10000 });
-        
-        if (data?.status && data?.result) {
-          videoUrl = data.result.hd || data.result.sd || data.result.video;
-          quality = data.result.hd ? "HD" : "SD";
-          title = data.result.title || "Facebook Video";
-          console.log("✅ API 3 working");
-        }
-      } catch (e) {
-        console.log("API 3 failed");
-      }
-    }
+    // HD > SD priority
+    const videoUrl = dl.hd || dl.sd;
+    const quality = dl.hd ? "HD" : "SD";
 
-    // ✅ TRY API 4: Vihanga (if all APIs fail)
-    if (!videoUrl) {
-      try {
-        const api4 = `https://vihangayt.me/download/fbdl?url=${encodeURIComponent(q)}`;
-        const { data } = await axios.get(api4, { timeout: 10000 });
-        
-        if (data?.status && data?.data?.video) {
-          videoUrl = data.data.video;
-          quality = data.data.quality || "HD";
-          title = data.data.title || "Facebook Video";
-          console.log("✅ API 4 working");
-        }
-      } catch (e) {
-        console.log("API 4 failed");
-      }
-    }
-
-    // If no API worked
-    if (!videoUrl) {
-      return reply("❌ Video fetch nahi ho saka\n➠ Khud check karo\n➠ https://fbdown.net");
-    }
-
-    // Simple caption
-    const caption = `📘 *Facebook Video*\n🎬 ${title}\n🎞 ${quality}\n⚡ BOSS-MD`;
-
-    // Send video
     await conn.sendMessage(from, {
       video: { url: videoUrl },
       mimetype: "video/mp4",
-      caption: caption
-    }, { quoted: mek });
+      caption:
+        `╔═══❖═══❖═══❖═══╗
+    ░B░O░S░S░-░M░D░
+╚═══❖═══❖═══❖═══╝
 
-    await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
+  ╭┅┅┅┅┅┅┅┅┅┅┅┅┅╮
+  ┆  📱 FACEBOOK  ┆
+  ╰┅┅┅┅┅┅┅┅┅┅┅┅┅╯
+
+*|*📘 *Facebook Video*
+*|🎬 Quality:* ${quality}
+*|⏱ Duration:* ${meta.duration}
+*╰━━━━━━━━━━━━━━━━━━⊷*
+
+> © created by BOSS-MD
+
+      💠 𝗕𝗢𝗦𝗦-𝗠𝗗 💠`,
+      contextInfo: {
+        externalAdReply: {
+          title: meta.title || "Facebook Video",
+          body: "BOSS-MD Facebook Downloader",
+          mediaType: 1
+        }
+      }
+    }, { quoted: m });
+
+    await conn.sendMessage(from, {
+      react: { text: "✅", key: m.key }
+    });
 
   } catch (err) {
     console.error("FB-DL ERROR:", err);
-    await conn.sendMessage(from, { react: { text: "❌", key: m.key } });
-    reply("❌ Error: " + err.message + "\n\n➠ Khud download karo: https://fbdown.net");
+    reply(`╔═══❖═══❖═══❖═══╗
+    ░B░O░S░S░-░M░D░
+╚═══❖═══❖═══❖═══╝
+
+  ╭┅┅┅┅┅┅┅┅┅┅┅┅┅╮
+  ┆ ⚠️ ERROR ⚠️  ┆
+  ╰┅┅┅┅┅┅┅┅┅┅┅┅┅╯
+
+❌ Error aagaya, thori dair baad try karo
+
+      💠 𝗕𝗢𝗦𝗦-𝗠𝗗 💠`);
   }
 });
