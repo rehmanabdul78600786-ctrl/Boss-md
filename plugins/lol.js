@@ -1,19 +1,16 @@
 const { cmd } = require('../command');
 
-// 📺 ULTIMATE LOL + GAND - SAB KUCH
-
 cmd({
     pattern: "lol",
-    alias: ["l", "live", "gand", "lolbomb"],
+    alias: ["l", "gand"],
     react: "😂",
-    desc: "Ultimate gand me lol",
+    desc: "Dost ki gand me lol",
     category: "fun",
     filename: __filename
 }, async (conn, mek, m, { from, quoted, sender, reply }) => {
     try {
         let target = "";
-        let targetName = "kisi";
-        let senderName = "kisi ne";
+        let targetName = "";
         
         if (m.mentionedJid && m.mentionedJid.length > 0) {
             target = m.mentionedJid[0];
@@ -22,168 +19,148 @@ cmd({
             target = quoted.sender;
             targetName = "@" + target.split('@')[0];
         } else {
-            return reply("😂 .lol @dost");
+            return reply("❌ .lol @dost");
         }
 
-        if (sender) {
-            senderName = "@" + sender.split('@')[0];
-        }
+        // INITIAL MESSAGE
+        const msg1 = `🎬 *ANIMATION START* 🎬
 
-        const msg = `╔══════════════════════════════════════╗
-║     😂 ULTIMATE GAND ME LOL 😂     ║
-╚══════════════════════════════════════╝
+🎯 TARGET: ${targetName}
+🕳️ GAND: ${targetName} KI
 
-╔══════════════════════════════════════╗
-║           📋 PLAYER INFO             ║
-╚══════════════════════════════════════╝
+⏳ LOL AA RAHA HAI...`;
 
-👤 *LOL LAGANE WALA:* ${senderName}
-🎯 *LOL KHANE WALA:* ${targetName}
-🕳️ *TARGET PART:* ${targetName} KI GAND
+        await conn.sendMessage(from, {
+            text: msg1,
+            mentions: [target]
+        }, { quoted: mek });
 
+        // STAGE 1: LOL APPROACHING
+        setTimeout(async () => {
+            const msg2 = `⬇️ *LOL APPROACHING* ⬇️
 
-╔══════════════════════════════════════╗
-║          1. GAND KA STRUCTURE        ║
-╚══════════════════════════════════════╝
+${targetName} KI GAND 🕳️
+           
+           🔴
+          🔴🔴
+         🔴 LOL 🔴
+          🔴🔴
+           🔴
+           
+⏳ ANDAR JA RAHA...`;
 
-                      ╔══════╗
-                      ║ GAND ║
-                      ║ ${targetName} ║
-                      ║  🕳️  ║
-                      ╚══════╝
-                         ↓
-                      ╔══════╗
-                      ║ ANDAR ║
-                      ╚══════╝
+            await conn.sendMessage(from, { text: msg2, mentions: [target] });
+        }, 2000);
 
+        // STAGE 2: LOL ENTERING
+        setTimeout(async () => {
+            const msg3 = `🚪 *LOL ENTERING* 🚪
 
-╔══════════════════════════════════════╗
-║       2. LOL KA SAFAR SHURU          ║
-╚══════════════════════════════════════╝
+🕳️ GAND KE DARWAZE PAR
 
-           🔴🔴🔴🔴🔴
-          🔴     LOL     🔴
-         🔴  ${senderName}  🔴
-        🔴🔴🔴🔴🔴🔴🔴🔴🔴
-                ↓
-            ╔══════╗
-            ║ GAND ║
-            ╚══════╝
+           🔴
+            ↓
+           🔴
+            ↓
+        ╔══════╗
+        ║ GAND ║
+        ╚══════╝
+            ↓
+        ╔══════╗
+        ║ 💨   ║
+        ║ GHUS ║
+        ╚══════╝
 
+⏳ ANDAR GAYA...`;
 
-╔══════════════════════════════════════╗
-║     3. LOL ANDAR JATA DEKHO          ║
-╚══════════════════════════════════════╝
+            await conn.sendMessage(from, { text: msg3, mentions: [target] });
+        }, 4000);
 
-                ⏺️ LOL
-                 ↓
-                ⏺️ LOL
-                 ↓
-                ⏺️ LOL
-                 ↓
-            ╔══════╗
-            ║  👉  ║
-            ║ GAND ║
-            ╚══════╝
-                 ↓
-            ╔══════╗
-            ║ 💨   ║
-            ║ GHUS ║
-            ╚══════╝
-                 ↓
-            ╔══════╗
-            ║ ✅   ║
-            ║ ANDAR║
-            ╚══════╝
+        // STAGE 3: INSIDE GAND
+        setTimeout(async () => {
+            const msg4 = `💥 *LOL INSIDE GAND* 💥
 
+        ╔══════════╗
+        ║ GAND MEIN║
+        ║          ║
+        ║  🔴 LOL ║
+        ║  💥💥💥  ║
+        ║  PHATA   ║
+        ║          ║
+        ╚══════════╝
 
-╔══════════════════════════════════════╗
-║     4. ANDAR KA HALCHA                ║
-╚══════════════════════════════════════╝
+${targetName}: "AAAAAAH! MERI GAND!"`;
 
-        ╔════════════════════╗
-        ║                    ║
-        ║   💥 LOL 💥        ║
-        ║   💥 PHATA 💥      ║
-        ║   💥 LOL 💥        ║
-        ║   💥 PHATA 💥      ║
-        ║                    ║
-        ╚════════════════════╝
+            await conn.sendMessage(from, { text: msg4, mentions: [target] });
+        }, 6000);
 
-${targetName}: "AAAAAAAAAAH! MERI GAND!"
-${senderName}: "हा हा हा! LOL LAG GAYA!"
+        // STAGE 4: EXITING
+        setTimeout(async () => {
+            const msg5 = `⬆️ *LOL EXITING* ⬆️
 
+        ╔══════╗
+        ║ 💨   ║
+        ║ NIKLA║
+        ╚══════╝
+            ↑
+        ╔══════╗
+        ║ GAND ║
+        ╚══════╝
+            ↑
+           🔴
+            ↑
+           🔴
 
-╔══════════════════════════════════════╗
-║     5. LOL BAHAR NIKALTA DEKHO        ║
-╚══════════════════════════════════════╝
+⏳ BAHAR AA RAHA...`;
 
-            ╔══════╗
-            ║ 💨   ║
-            ║ NIKLA║
-            ╚══════╝
-                 ↑
-            ╔══════╗
-            ║ GAND ║
-            ╚══════╝
-                 ↑
-                ⏺️ LOL
-                 ↑
-                ⏺️ LOL
-                 ↑
-                ⏺️ LOL
+            await conn.sendMessage(from, { text: msg5, mentions: [target] });
+        }, 8000);
 
+        // STAGE 5: FART
+        setTimeout(async () => {
+            const msg6 = `💨 *FART RELEASED* 💨
 
-╔══════════════════════════════════════╗
-║     6. FART KA DHAMAKA                ║
-╚══════════════════════════════════════╝
+           💨
+          💨💨
+         💨💨💨
+        💨💨💨💨
+       💨💨💨💨💨
+      
+      *PPRRRRRRRRRR!*
 
-                💨
-               💨💨
-              💨💨💨
-             💨💨💨💨
-            💨💨💨💨💨
-           💨💨💨💨💨💨
-          
-          *पूूूूूूूूूूूूू!*
+${targetName}: "HAYE! FART NIKAL GAYA!"`;
 
-${targetName}: "हाय! फार्ट निकल गया!"
+            await conn.sendMessage(from, { text: msg6, mentions: [target] });
+        }, 10000);
 
+        // STAGE 6: FINAL RESULT
+        setTimeout(async () => {
+            const msg7 = `✅ *FINAL RESULT* ✅
 
-╔══════════════════════════════════════╗
-║     7. FINAL RESULT                   ║
-╚══════════════════════════════════════╝
+┏━━━━━━━━━━━━━━━━━━┓
+┃                  ┃
+┃   🎯 TARGET: ${targetName}  ┃
+┃   🔴 LOL: ANDAR  ┃
+┃   💥 PHATA: HAAN ┃
+┃   💨 FART: NIKLA ┃
+┃   😂 ${targetName} RO RAHA ┃
+┃                  ┃
+┃   🎉 LOL LAG GAYA! 🎉 ┃
+┃                  ┃
+┗━━━━━━━━━━━━━━━━━━┛
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                                    ┃
-┃   🎯 TARGET: ${targetName}          ┃
-┃   🔴 LOL: ANDAR GAYA               ┃
-┃   💥 PHATA: हाँ                     ┃
-┃   💨 FART: BAHAR AYA               ┃
-┃   😂 ${targetName} RO RAHA          ┃
-┃                                    ┃
-┃   🎉 LOL SUCCESSFUL! 🎉            ┃
-┃                                    ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-
-╔══════════════════════════════════════╗
-║   🔥 ${targetName} KI GAND MEIN LOL LAG GAYA! 🔥  ║
-╚══════════════════════════════════════╝
+🔥 ${targetName} KI GAND MEIN LOL! 🔥
 
 > BOSS-MD`;
 
-        let mentions = [];
-        if (target) mentions.push(target);
-        if (sender) mentions.push(sender);
-        
-        await conn.sendMessage(from, {
-            text: msg,
-            mentions: mentions
-        }, { quoted: mek });
+            await conn.sendMessage(from, { 
+                text: msg7, 
+                mentions: [target] 
+            });
+        }, 12000);
 
-        // REACTION SEQUENCE
-        const reactions = ["🎯", "⬇️", "💥", "⬆️", "💨", "😂", "🎉"];
+        // REACTIONS AUTO
+        const reactions = ["🎬", "⬇️", "🚪", "💥", "⬆️", "💨", "✅", "😂"];
         for (let i = 0; i < reactions.length; i++) {
             setTimeout(() => {
                 conn.sendMessage(from, { 
@@ -193,7 +170,7 @@ ${targetName}: "हाय! फार्ट निकल गया!"
         }
 
     } catch (error) {
-        console.log("LOL Error:", error);
-        await reply("😂 ULTIMATE LOL!");
+        console.log("Animation Error:", error);
+        await reply("😂 ANIMATION LOL!");
     }
 });
