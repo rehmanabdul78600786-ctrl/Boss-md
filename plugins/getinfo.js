@@ -179,19 +179,3 @@ cmd({
         reply("❌ Error: " + e.message);
     }
 });
-
-/* ========== QUICK STATUS ========== */
-cmd({
-    pattern: "ping",
-    desc: "Bot speed",
-    react: "🖕",
-    category: "tools",
-    filename: __filename
-}, async (conn, mek, m, { reply }) => {
-    const start = Date.now();
-    //await reply("🏓 Pinging...");
-    const speed = Date.now() - start;
-    reply(`⚡ BOSS-MD Speed: ${speed}ms`);
-});
-
-console.log("✅ GetInfo Plugin Loaded Successfully");
