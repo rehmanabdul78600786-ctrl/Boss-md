@@ -169,13 +169,3 @@ cmd({
 • .getinfo server
 `);
         }
-
-        await conn.sendMessage(from, {
-            react: { text: "✅", key: mek.key }
-        });
-
-    } catch (e) {
-        console.log(e);
-        reply("❌ Error: " + e.message);
-    }
-});
