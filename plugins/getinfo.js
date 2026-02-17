@@ -50,7 +50,7 @@ cmd({
 ╚══════════════════╝
 
 👤 ${senderName}
-✅ ꜰɪɴᴀʟ: ${finalPing}ms | ⏳ 10s
+✅ ꜰɪɴᴀʟ: ${finalPing}ms | ⏳ 0s
 
 > ${config.BOT_NAME}`,
       edit: msg.key
