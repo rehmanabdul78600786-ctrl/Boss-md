@@ -4,7 +4,7 @@ const { cmd, commands } = require('../command');
 // 👑 BOSS STYLE PING
 cmd({
   pattern: "ping",
-  alias: ["test", "speed"],
+  alias: ["qadeer", "legend"],
   desc: "Simple 10 second ping test",
   category: "main",
   react: "📊",
